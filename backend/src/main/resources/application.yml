@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: campus-cab
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/campus_cab?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true}
+    username: ${DB_USERNAME:campus_cab}
+    password: ${DB_PASSWORD}
+  jackson:
+    time-zone: UTC
+server:
+  error:
+    include-message: never
+  servlet:
+    session:
+      timeout: 12h
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${COOKIE_SECURE:true}
+app:
+  otp-mode: ${OTP_MODE:twilio}
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:}

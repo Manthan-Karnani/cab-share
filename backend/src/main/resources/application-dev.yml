@@ -1,0 +1,7 @@
+app:
+  otp-mode: dev
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
