@@ -1,4 +1,5 @@
 import { createDemoApi } from "./demo";
+import { CAMPUS } from "./routes";
 export const DEMO = import.meta.env.VITE_DEMO_MODE === "true";
 let csrf;
 const base = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -39,8 +40,8 @@ const real = {
   sendOtp: (phone) => request("/auth/otp", "POST", { phone }),
   verifyOtp: (code) => request("/auth/verify", "POST", { code }),
   profile: (body) => request("/me", "PUT", body),
-  search: (flightAt, destination) =>
-    request(`/rides?${new URLSearchParams({ flightAt, destination })}`),
+  search: (flightAt, destination, origin = CAMPUS) =>
+    request(`/rides?${new URLSearchParams({ flightAt, destination, origin })}`),
   create: (body) => request("/rides", "POST", body),
   mine: () => request("/rides/mine"),
   join: (id) => request(`/rides/${id}/requests`, "POST"),

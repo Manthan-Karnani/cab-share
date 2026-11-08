@@ -97,6 +97,146 @@ class CampusCabIntegrationTest {
   }
 
   @Test
+  void airportToCampusMatchingUsesArrivalAndBothRouteEndpoints() {
+    Instant arrival = flight.truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+    var inbound = store.create(
+      host,
+      Store.CAMPUS,
+      arrival,
+      arrival.plusSeconds(1800),
+      4,
+      "",
+      "Airport"
+    );
+    ride(4);
+    store.create(
+      host,
+      Store.CAMPUS,
+      arrival,
+      arrival.plusSeconds(1800),
+      4,
+      "",
+      "Other airport"
+    );
+    for (long offset : new long[] { -3600, 0, 3600 }) {
+      var matches = store.search(
+        alice,
+        arrival.plusSeconds(offset),
+        Store.CAMPUS,
+        " airport "
+      );
+      assertEquals(1, matches.size());
+      assertEquals(inbound.id(), matches.get(0).id());
+      assertEquals("Airport", matches.get(0).origin());
+    }
+    for (long offset : new long[] { -3601, 3601, 86400 }) {
+      assertTrue(
+        store
+          .search(alice, arrival.plusSeconds(offset), Store.CAMPUS, "Airport")
+          .isEmpty()
+      );
+    }
+    assertEquals(1, store.search(alice, arrival, "Airport").size());
+    var nearer = store.create(
+      host,
+      Store.CAMPUS,
+      arrival.plusSeconds(600),
+      arrival.plusSeconds(2400),
+      4,
+      "",
+      "Airport"
+    );
+    assertEquals(
+      nearer.id(),
+      store
+        .search(alice, arrival.plusSeconds(600), Store.CAMPUS, "Airport")
+        .get(0)
+        .id()
+    );
+    store.cancel(inbound.id(), host);
+    assertEquals(
+      1,
+      store.search(alice, arrival, Store.CAMPUS, "Airport").size()
+    );
+  }
+
+  @Test
+  void pickupValidationDependsOnRouteDirection() {
+    assertThrows(Exception.class, () ->
+      store.create(host, Store.CAMPUS, flight, pickup, 4, "", "Airport")
+    );
+    assertThrows(Exception.class, () ->
+      store.create(host, "Airport", flight, flight.plusSeconds(1), 4, "")
+    );
+    assertThrows(Exception.class, () ->
+      store.create(
+        host,
+        Store.CAMPUS,
+        flight,
+        flight.plusSeconds(1),
+        4,
+        "",
+        Store.CAMPUS
+      )
+    );
+    assertThrows(Exception.class, () ->
+      store.create(host, "Other airport", flight, pickup, 4, "", "Airport")
+    );
+    assertEquals(
+      Store.CAMPUS,
+      store
+        .create(host, Store.CAMPUS, flight, flight, 4, "", "Airport")
+        .destination()
+    );
+  }
+
+  @Test
+  void returnRideApiPersistsOriginAndAppliesOneHourLimit() throws Exception {
+    Instant arrival = flight.truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+    mvc
+      .perform(
+        post("/api/rides")
+          .with(user(String.valueOf(host)))
+          .with(csrf())
+          .contentType("application/json")
+          .content(
+            """
+            {"origin":"Airport","destination":"MIT Manipal campus","flightAt":"%s","pickupAt":"%s","capacity":4,"notes":"Meet at arrivals"}
+            """.formatted(arrival, arrival.plusSeconds(1800))
+          )
+      )
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.origin").value("Airport"))
+      .andExpect(jsonPath("$.destination").value(Store.CAMPUS));
+    mvc
+      .perform(
+        get("/api/rides")
+          .with(user(String.valueOf(alice)))
+          .param("origin", "Airport")
+          .param("destination", Store.CAMPUS)
+          .param("flightAt", arrival.plusSeconds(3600).toString())
+      )
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.length()").value(1));
+    mvc
+      .perform(
+        get("/api/rides")
+          .with(user(String.valueOf(alice)))
+          .param("origin", "Airport")
+          .param("destination", Store.CAMPUS)
+          .param("flightAt", arrival.plusSeconds(3601).toString())
+      )
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.length()").value(0));
+    var ride = store.search(alice, arrival, Store.CAMPUS, "Airport").get(0);
+    store.request(ride.id(), alice);
+    mvc
+      .perform(get("/api/requests").with(user(String.valueOf(alice))))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$[0].origin").value("Airport"));
+  }
+
+  @Test
   void ownershipDuplicateAndProfileValidation() {
     var r = ride(3);
     var q = store.request(r.id(), alice);
@@ -110,6 +250,100 @@ class CampusCabIntegrationTest {
     assertThrows(Exception.class, () ->
       store.create(host, "Airport", pickup, flight, 4, "")
     );
+  }
+
+  @Test
+  void simplifiedPostingSupportsBothRoutesWithoutPickupOrNotes()
+    throws Exception {
+    for (boolean toCampus : new boolean[] { false, true }) {
+      String origin = toCampus ? "Airport" : Store.CAMPUS;
+      String destination = toCampus ? Store.CAMPUS : "Airport";
+      mvc
+        .perform(
+          post("/api/rides")
+            .with(user(String.valueOf(host)))
+            .with(csrf())
+            .contentType("application/json")
+            .content(
+              """
+              {"origin":"%s","destination":"%s","flightAt":"%s","capacity":3}
+              """.formatted(origin, destination, flight)
+            )
+        )
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.capacity").value(3))
+        .andExpect(jsonPath("$.pickupAt").isEmpty())
+        .andExpect(jsonPath("$.notes").value(""));
+      var ride = store.search(alice, flight, destination, origin).get(0);
+      assertNull(ride.pickupAt());
+      var a = store.request(ride.id(), alice);
+      var b = store.request(ride.id(), bob);
+      assertNull(store.requests(alice).get(0).pickupAt());
+      store.decide(a.id(), host, true);
+      assertEquals(2, store.ride(ride.id(), host).occupied());
+      db.update(
+        "UPDATE rides SET flight_at=? WHERE id=?",
+        java.sql.Timestamp.from(Instant.now().minusSeconds(60)),
+        ride.id()
+      );
+      assertTrue(store.search(alice, flight, destination, origin).isEmpty());
+      assertThrows(Exception.class, () -> store.decide(b.id(), host, true));
+      assertThrows(Exception.class, () ->
+        store.request(ride.id(), student("+919000000008", "Late student"))
+      );
+    }
+  }
+
+  @Test
+  void simplifiedPostingRequiresValidCapacityAndFutureFlight()
+    throws Exception {
+    for (String capacity : new String[] {
+      "",
+      ",\"capacity\":null",
+      ",\"capacity\":0",
+      ",\"capacity\":1",
+      ",\"capacity\":9",
+    }) {
+      mvc
+        .perform(
+          post("/api/rides")
+            .with(user(String.valueOf(host)))
+            .with(csrf())
+            .contentType("application/json")
+            .content(
+              """
+              {"origin":"MIT Manipal campus","destination":"Airport","flightAt":"%s"%s}
+              """.formatted(flight, capacity)
+            )
+        )
+        .andExpect(status().isBadRequest());
+    }
+    mvc
+      .perform(
+        post("/api/rides")
+          .with(user(String.valueOf(host)))
+          .with(csrf())
+          .contentType("application/json")
+          .content(
+            """
+            {"origin":"MIT Manipal campus","destination":"Airport","flightAt":"%s","capacity":3}
+            """.formatted(Instant.now().minusSeconds(60))
+          )
+      )
+      .andExpect(status().isBadRequest());
+    mvc
+      .perform(
+        post("/api/rides")
+          .with(user(String.valueOf(host)))
+          .with(csrf())
+          .contentType("application/json")
+          .content(
+            """
+            {"origin":"MIT Manipal campus","destination":"Airport","capacity":3}
+            """
+          )
+      )
+      .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -146,16 +380,32 @@ class CampusCabIntegrationTest {
   }
 
   @Test
-  void cancellationNotifiesAndRemovesSearchResult() {
+  void cancellationNotifiesAndRemovesRideFromLists() throws Exception {
     var r = ride(3);
+    var other = ride(4);
     var q = store.request(r.id(), alice);
     store.decide(q.id(), host, true);
     store.request(r.id(), bob);
+    assertEquals(2, store.mine(host).size());
+    assertEquals(1, store.mine(alice).size());
     store.cancel(r.id(), host);
     assertEquals("CANCELLED", store.requests(alice).get(0).status());
     assertEquals("CANCELLED", store.requests(bob).get(0).status());
     assertTrue(store.notices(alice).get(0).message().contains("cancelled"));
-    assertTrue(store.search(alice, flight, "Airport").isEmpty());
+    assertTrue(
+      store
+        .search(alice, flight, "Airport")
+        .stream()
+        .noneMatch(ride -> ride.id() == r.id())
+    );
+    assertEquals(1, store.mine(host).size());
+    assertEquals(other.id(), store.mine(host).get(0).id());
+    assertTrue(store.mine(alice).isEmpty());
+    mvc
+      .perform(get("/api/rides/mine").with(user(String.valueOf(host))))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.length()").value(1))
+      .andExpect(jsonPath("$[0].id").value(other.id()));
   }
 
   @Test

@@ -25,10 +25,11 @@ class RideController {
 
   record NewRide(
     @NotBlank @Size(max = 100) String destination,
+    @Size(min = 1, max = 100) String origin,
     @NotNull Instant flightAt,
-    @NotNull Instant pickupAt,
-    @Min(2) @Max(8) int capacity,
-    @NotNull @Size(max = 300) String notes
+    Instant pickupAt,
+    @NotNull @Min(2) @Max(8) Integer capacity,
+    @Size(max = 300) String notes
   ) {}
 
   record Decision(@NotNull Boolean accept) {}
@@ -42,9 +43,12 @@ class RideController {
   List<Store.Ride> search(
     Principal p,
     @RequestParam Instant flightAt,
-    @RequestParam @Size(max = 100) String destination
+    @RequestParam @NotBlank @Size(max = 100) String destination,
+    @RequestParam(defaultValue = Store.CAMPUS) @NotBlank @Size(
+      max = 100
+    ) String origin
   ) {
-    return store.search(id(p), flightAt, destination);
+    return store.search(id(p), flightAt, destination, origin);
   }
 
   @PostMapping("/api/rides")
@@ -55,7 +59,8 @@ class RideController {
       r.flightAt(),
       r.pickupAt(),
       r.capacity(),
-      r.notes()
+      r.notes(),
+      r.origin()
     );
   }
 

@@ -1,0 +1,1 @@
+ALTER TABLE rides ADD COLUMN origin VARCHAR(100) NOT NULL DEFAULT 'MIT Manipal campus';

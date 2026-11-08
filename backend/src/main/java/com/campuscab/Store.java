@@ -14,6 +14,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional(isolation = Isolation.READ_COMMITTED)
 class Store {
 
+  static final String CAMPUS = "MIT Manipal campus";
+
   final JdbcTemplate db;
 
   Store(JdbcTemplate db) {
@@ -35,6 +37,7 @@ class Store {
     long id,
     Student creator,
     String destination,
+    String origin,
     Instant flightAt,
     Instant pickupAt,
     int capacity,
@@ -43,7 +46,11 @@ class Store {
     int occupied,
     List<Student> members,
     String myRequestStatus
-  ) {}
+  ) {
+    Instant availableUntil() {
+      return pickupAt == null ? flightAt : pickupAt;
+    }
+  }
 
   record JoinRequest(
     long id,
@@ -51,6 +58,7 @@ class Store {
     Student student,
     String status,
     String destination,
+    String origin,
     Instant flightAt,
     Instant pickupAt,
     boolean incoming
@@ -71,6 +79,10 @@ class Store {
       r.getString("name"),
       r.getString("block_number")
     );
+
+  static Instant instant(Timestamp timestamp) {
+    return timestamp == null ? null : timestamp.toInstant();
+  }
 
   static ResponseStatusException fail(HttpStatus status, String text) {
     return new ResponseStatusException(status, text);
@@ -147,8 +159,9 @@ class Store {
             id,
             creator,
             r.getString("destination"),
+            r.getString("origin"),
             r.getTimestamp("flight_at").toInstant(),
-            r.getTimestamp("pickup_at").toInstant(),
+            instant(r.getTimestamp("pickup_at")),
             r.getInt("capacity"),
             r.getString("notes"),
             r.getString("status"),
@@ -165,14 +178,24 @@ class Store {
   }
 
   List<Ride> search(long viewer, Instant flight, String destination) {
+    return search(viewer, flight, destination, CAMPUS);
+  }
+
+  List<Ride> search(
+    long viewer,
+    Instant flight,
+    String destination,
+    String origin
+  ) {
     requireComplete(viewer);
     List<Long> ids = db.query(
-      "SELECT id FROM rides WHERE status='OPEN' AND pickup_at>? AND flight_at BETWEEN ? AND ? AND LOWER(destination)=LOWER(?) ORDER BY ABS(TIMESTAMPDIFF(SECOND,flight_at,?)),id",
+      "SELECT id FROM rides WHERE status='OPEN' AND COALESCE(pickup_at,flight_at)>? AND flight_at BETWEEN ? AND ? AND LOWER(destination)=LOWER(?) AND LOWER(origin)=LOWER(?) ORDER BY ABS(TIMESTAMPDIFF(SECOND,flight_at,?)),id",
       (r, n) -> r.getLong(1),
       Timestamp.from(Instant.now()),
       Timestamp.from(flight.minusSeconds(3600)),
       Timestamp.from(flight.plusSeconds(3600)),
       destination.trim(),
+      origin == null ? CAMPUS : origin.trim(),
       Timestamp.from(flight)
     );
     return ids
@@ -190,19 +213,68 @@ class Store {
     int capacity,
     String notes
   ) {
+    return create(
+      creator,
+      destination,
+      flight,
+      pickup,
+      capacity,
+      notes,
+      CAMPUS
+    );
+  }
+
+  Ride create(
+    long creator,
+    String destination,
+    Instant flight,
+    Instant pickup,
+    int capacity,
+    String notes,
+    String origin
+  ) {
     requireComplete(creator);
-    if (!pickup.isAfter(Instant.now()) || !flight.isAfter(pickup)) throw fail(
+    origin = origin == null ? CAMPUS : origin.trim();
+    destination = destination.trim();
+    boolean toCampus = CAMPUS.equalsIgnoreCase(destination);
+    if (
+      origin.isBlank() ||
+      destination.isBlank() ||
+      toCampus == CAMPUS.equalsIgnoreCase(origin)
+    ) throw fail(
       HttpStatus.BAD_REQUEST,
-      "Pickup must be in the future and before your flight."
+      "Choose a route between an airport and MIT Manipal campus."
+    );
+    if (capacity < 2 || capacity > 8) throw fail(
+      HttpStatus.BAD_REQUEST,
+      "Cab capacity must be between 2 and 8, including you."
+    );
+    if (pickup == null && !flight.isAfter(Instant.now())) throw fail(
+      HttpStatus.BAD_REQUEST,
+      "Flight departure or arrival must be in the future."
+    );
+    if (pickup != null && !pickup.isAfter(Instant.now())) throw fail(
+      HttpStatus.BAD_REQUEST,
+      "Pickup must be in the future."
+    );
+    if (
+      pickup != null &&
+      (toCampus ? pickup.isBefore(flight) : !flight.isAfter(pickup))
+    ) throw fail(
+      HttpStatus.BAD_REQUEST,
+      toCampus
+        ? "Airport pickup must be at or after your flight arrival."
+        : "Campus pickup must be before your flight departure."
     );
     db.update(
-      "INSERT INTO rides(creator_id,destination,flight_at,pickup_at,capacity,notes,status,created_at) VALUES(?,?,?,?,?,?,'OPEN',?)",
+      "INSERT INTO rides(creator_id,destination,origin,flight_at,pickup_at,capacity,notes,status,created_at) VALUES(?,?,?,?,?,?,?,'OPEN',?)",
       creator,
-      destination.trim(),
+      toCampus ? CAMPUS : destination,
+      toCampus ? origin : CAMPUS,
       Timestamp.from(flight),
-      Timestamp.from(pickup),
+      pickup == null ? null : Timestamp.from(pickup),
       capacity,
-      notes.trim(),
+      notes == null ? "" : notes.trim(),
       Timestamp.from(Instant.now())
     );
     long id = db.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
@@ -213,7 +285,7 @@ class Store {
     requireComplete(viewer);
     return db
       .query(
-        "SELECT DISTINCT r.id,r.flight_at FROM rides r LEFT JOIN join_requests j ON j.ride_id=r.id WHERE r.creator_id=? OR (j.student_id=? AND j.status='ACCEPTED') ORDER BY r.flight_at DESC",
+        "SELECT DISTINCT r.id,r.flight_at FROM rides r LEFT JOIN join_requests j ON j.ride_id=r.id WHERE r.status<>'CANCELLED' AND (r.creator_id=? OR (j.student_id=? AND j.status='ACCEPTED')) ORDER BY r.flight_at DESC",
         (r, n) -> r.getLong("id"),
         viewer,
         viewer
@@ -244,7 +316,7 @@ class Store {
       "You are already the creator of this ride."
     );
     if (
-      !r.status().equals("OPEN") || !r.pickupAt().isAfter(Instant.now())
+      !r.status().equals("OPEN") || !r.availableUntil().isAfter(Instant.now())
     ) throw fail(HttpStatus.CONFLICT, "This ride is no longer available.");
     if (r.occupied() >= r.capacity()) throw fail(
       HttpStatus.CONFLICT,
@@ -272,6 +344,7 @@ class Store {
       s,
       "PENDING",
       r.destination(),
+      r.origin(),
       r.flightAt(),
       r.pickupAt(),
       false
@@ -281,7 +354,7 @@ class Store {
   List<JoinRequest> requests(long viewer) {
     requireComplete(viewer);
     return db.query(
-      "SELECT j.*,r.destination,r.flight_at,r.pickup_at,r.creator_id FROM join_requests j JOIN rides r ON r.id=j.ride_id WHERE r.creator_id=? OR j.student_id=? ORDER BY j.created_at DESC",
+      "SELECT j.*,r.destination,r.origin,r.flight_at,r.pickup_at,r.creator_id FROM join_requests j JOIN rides r ON r.id=j.ride_id WHERE r.creator_id=? OR j.student_id=? ORDER BY j.created_at DESC",
       (r, n) ->
         new JoinRequest(
           r.getLong("id"),
@@ -289,8 +362,9 @@ class Store {
           student(r.getLong("student_id")),
           r.getString("status"),
           r.getString("destination"),
+          r.getString("origin"),
           r.getTimestamp("flight_at").toInstant(),
-          r.getTimestamp("pickup_at").toInstant(),
+          instant(r.getTimestamp("pickup_at")),
           r.getLong("creator_id") == viewer
         ),
       viewer,
@@ -324,7 +398,8 @@ class Store {
       "This request has already been answered."
     );
     if (
-      !ride.status().equals("OPEN") || !ride.pickupAt().isAfter(Instant.now())
+      !ride.status().equals("OPEN") ||
+      !ride.availableUntil().isAfter(Instant.now())
     ) throw fail(HttpStatus.CONFLICT, "This ride is no longer available.");
     if (accept && ride.occupied() >= ride.capacity()) throw fail(
       HttpStatus.CONFLICT,

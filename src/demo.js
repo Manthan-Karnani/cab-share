@@ -1,4 +1,5 @@
 // Explicit browser-only demo. The real API adapter never falls back to this data.
+import { CAMPUS, isToCampus, rideDeadline } from "./routes.js";
 export const tomorrow = () => {
   const d = new Date();
   d.setDate(d.getDate() + 1);
@@ -25,6 +26,7 @@ export function seed() {
       {
         id: 1,
         creatorId: 1,
+        origin: CAMPUS,
         destination: "Airport",
         flightAt: localInstant(date, "12:00"),
         pickupAt: localInstant(date, "08:30"),
@@ -35,6 +37,7 @@ export function seed() {
       {
         id: 2,
         creatorId: 2,
+        origin: CAMPUS,
         destination: "Airport",
         flightAt: localInstant(date, "12:30"),
         pickupAt: localInstant(date, "09:00"),
@@ -45,11 +48,23 @@ export function seed() {
       {
         id: 3,
         creatorId: 3,
+        origin: CAMPUS,
         destination: "Airport",
         flightAt: localInstant(date, "11:15"),
         pickupAt: localInstant(date, "07:45"),
         capacity: 3,
         notes: "A little company for the ride home.",
+        status: "OPEN",
+      },
+      {
+        id: 4,
+        creatorId: 4,
+        origin: "Airport",
+        destination: CAMPUS,
+        flightAt: localInstant(date, "12:00"),
+        pickupAt: localInstant(date, "12:30"),
+        capacity: 4,
+        notes: "Meet outside arrivals for the ride back to MIT Manipal.",
         status: "OPEN",
       },
     ],
@@ -68,6 +83,7 @@ export function rideView(db, r, viewer) {
   ];
   return {
     ...r,
+    origin: r.origin ?? CAMPUS,
     creator,
     members,
     occupied: members.length,
@@ -76,14 +92,21 @@ export function rideView(db, r, viewer) {
         ?.status || null,
   };
 }
-export function searchRides(db, viewer, flightAt, destination) {
+export function searchRides(
+  db,
+  viewer,
+  flightAt,
+  destination,
+  origin = CAMPUS,
+) {
   return db.rides
     .map((r) => rideView(db, r, viewer))
     .filter(
       (r) =>
         r.status === "OPEN" &&
-        new Date(r.pickupAt) > new Date() &&
+        new Date(rideDeadline(r)) > new Date() &&
         r.destination.toLowerCase() === destination.trim().toLowerCase() &&
+        r.origin.toLowerCase() === origin.trim().toLowerCase() &&
         Math.abs(new Date(r.flightAt) - new Date(flightAt)) <= 3600000 &&
         r.occupied < r.capacity,
     )
@@ -104,7 +127,7 @@ export function decideRequest(db, id, viewer, accept) {
   if (r.creatorId !== viewer) throw Error("Only the creator can respond.");
   if (q.status !== "PENDING")
     throw Error("This request has already been answered.");
-  if (r.status !== "OPEN" || new Date(r.pickupAt) <= new Date())
+  if (r.status !== "OPEN" || new Date(rideDeadline(r)) <= new Date())
     throw Error("This ride is no longer available.");
   if (accept && r.occupied >= r.capacity) throw Error("This cab is full.");
   q.status = accept ? "ACCEPTED" : "REJECTED";
@@ -163,6 +186,7 @@ export function createDemoApi(
       ...q,
       student: d.users.find((u) => u.id === q.studentId),
       destination: r.destination,
+      origin: r.origin ?? CAMPUS,
       flightAt: r.flightAt,
       pickupAt: r.pickupAt,
       incoming: r.creatorId === uid(),
@@ -208,19 +232,57 @@ export function createDemoApi(
         return u;
       });
     },
-    search: async (flight, destination) => {
+    search: async (flight, destination, origin = CAMPUS) => {
       complete();
-      return searchRides(read(), uid(), flight, destination);
+      return searchRides(read(), uid(), flight, destination, origin);
     },
     create: async (body) => {
       complete();
+      const origin = (body.origin ?? CAMPUS).trim();
+      const destination = body.destination.trim();
+      const toCampus = isToCampus({ destination });
       if (
-        new Date(body.pickupAt) <= new Date() ||
-        new Date(body.flightAt) <= new Date(body.pickupAt)
+        !origin ||
+        !destination ||
+        toCampus === (origin.toLowerCase() === CAMPUS.toLowerCase())
       )
-        throw Error("Pickup must be in the future and before your flight.");
+        throw Error(
+          "Choose a route between an airport and MIT Manipal campus.",
+        );
+      const flight = new Date(body.flightAt);
+      const pickup = body.pickupAt == null ? null : new Date(body.pickupAt);
+      if (
+        !Number.isInteger(body.capacity) ||
+        body.capacity < 2 ||
+        body.capacity > 8
+      )
+        throw Error("Cab capacity must be between 2 and 8, including you.");
+      if (
+        !Number.isFinite(+flight) ||
+        (pickup !== null && !Number.isFinite(+pickup))
+      )
+        throw Error("Choose a valid flight time and pickup time.");
+      if (pickup === null && flight <= new Date())
+        throw Error("Flight departure or arrival must be in the future.");
+      if (pickup !== null && pickup <= new Date())
+        throw Error("Pickup must be in the future.");
+      if (pickup !== null && (toCampus ? pickup < flight : pickup >= flight))
+        throw Error(
+          toCampus
+            ? "Airport pickup must be at or after your flight arrival."
+            : "Campus pickup must be before your flight departure.",
+        );
       return mutate((d) => {
-        const r = { ...body, id: d.nextId++, creatorId: uid(), status: "OPEN" };
+        const r = {
+          ...body,
+          pickupAt: body.pickupAt ?? null,
+          notes: body.notes?.trim() ?? "",
+          origin: toCampus ? origin : CAMPUS,
+          destination: toCampus ? CAMPUS : destination,
+          id: d.nextId++,
+          creatorId: uid(),
+          status: "OPEN",
+        };
         d.rides.unshift(r);
         return rideView(d, r, uid());
       });
@@ -231,13 +293,14 @@ export function createDemoApi(
       return d.rides
         .filter(
           (r) =>
-            r.creatorId === uid() ||
-            d.requests.some(
-              (q) =>
-                q.rideId === r.id &&
-                q.studentId === uid() &&
-                q.status === "ACCEPTED",
-            ),
+            r.status !== "CANCELLED" &&
+            (r.creatorId === uid() ||
+              d.requests.some(
+                (q) =>
+                  q.rideId === r.id &&
+                  q.studentId === uid() &&
+                  q.status === "ACCEPTED",
+              )),
         )
         .map((r) => rideView(d, r, uid()));
     },
@@ -250,7 +313,7 @@ export function createDemoApi(
           uid(),
         );
         if (r.creatorId === uid()) throw Error("You are already the creator.");
-        if (r.status !== "OPEN" || new Date(r.pickupAt) <= new Date())
+        if (r.status !== "OPEN" || new Date(rideDeadline(r)) <= new Date())
           throw Error("This ride is no longer available.");
         if (r.occupied >= r.capacity) throw Error("This cab is full.");
         if (r.myRequestStatus)

@@ -32,6 +32,9 @@ import {
 } from "lucide-react";
 import { api, DEMO } from "./api";
 import { tomorrow, localInstant } from "./demo";
+import { isToCampus, routeEndpoints, routeLabel, rideDeadline } from "./routes";
+import CursorGlow from "./CursorGlow";
+import NightDrive from "./NightDrive";
 import "./styles.css";
 const dateLabel = (s) =>
   new Date(s).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
@@ -66,94 +69,94 @@ function TaxiArt({ small = false }) {
       className={small ? "taxi-art small" : "taxi-art"}
       viewBox="0 0 600 365"
       fill="none"
-      aria-label="Illustration of a green shared taxi travelling from campus to the airport"
+      aria-label="Illustration of an orange shared taxi travelling from campus to the airport"
       role="img"
     >
       <defs>
         <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse">
-          <circle cx="1" cy="1" r="1" fill="#bbc8b9" opacity=".4" />
+          <circle cx="1" cy="1" r="1" fill="#62442f" opacity=".4" />
         </pattern>
       </defs>
       <rect width="600" height="365" rx="20" fill="url(#dots)" />
-      <circle cx="308" cy="172" r="139" fill="#e5ecd7" />
+      <circle cx="308" cy="172" r="139" fill="#24180f" />
       <circle
         cx="308"
         cy="172"
         r="109"
-        stroke="#d4dfc7"
+        stroke="#5c3b22"
         strokeDasharray="4 7"
       />
-      <path d="M46 300H552" stroke="#bcc6b6" strokeWidth="2" />
+      <path d="M46 300H552" stroke="#5c4a3a" strokeWidth="2" />
       <path
         d="M75 297V202h70v95M64 202l46-28 47 28M98 188v-38h25v38M102 145h17"
-        fill="#f4f2e9"
-        stroke="#a9b5a2"
+        fill="#201b18"
+        stroke="#70523c"
         strokeWidth="2"
       />
       <path
         d="M89 217h10v12H89zm28 0h10v12h-10zm-28 26h10v12H89zm28 0h10v12h-10z"
-        fill="#c8d2bc"
+        fill="#9b633c"
       />
       <path
         d="M462 296V217h50v79M449 218h76M487 215V147"
-        stroke="#a9b5a2"
+        stroke="#70523c"
         strokeWidth="2"
       />
       <path
         d="m481 162-39-9 3-5 37 3 8-31c2-7 7-6 7 1l-2 31 32 17-1 6-33-11-2 14 8 6-2 4-14-7-14 1v-4l12-4z"
-        fill="#16483d"
+        fill="#a34d23"
       />
       <path
         d="M115 262c10-27 58-26 82-27l28-59c5-9 11-14 24-14h97c14 0 22 7 32 19l40 51 49 11c14 3 23 16 23 31v20H114z"
-        fill="#215a49"
-        stroke="#16483d"
+        fill="#ec7c36"
+        stroke="#a34d23"
         strokeWidth="3"
       />
-      <path d="m232 179-25 55h151l-3-55z" fill="#c6dbcc" />
-      <path d="M367 183l39 51h-40z" fill="#c6dbcc" />
+      <path d="m232 179-25 55h151l-3-55z" fill="#44382d" />
+      <path d="M367 183l39 51h-40z" fill="#44382d" />
       <path
         d="M279 179v56M204 246v47M358 246v47"
-        stroke="#16483d"
+        stroke="#a34d23"
         strokeWidth="3"
       />
-      <path d="M118 268h27v12h-27M462 261h22v13h-22" fill="#e5edbd" />
-      <rect x="292" y="242" width="20" height="4" rx="2" fill="#d8e4c6" />
-      <rect x="374" y="242" width="19" height="4" rx="2" fill="#d8e4c6" />
+      <path d="M118 268h27v12h-27M462 261h22v13h-22" fill="#ffd7a3" />
+      <rect x="292" y="242" width="20" height="4" rx="2" fill="#ffc18d" />
+      <rect x="374" y="242" width="19" height="4" rx="2" fill="#ffc18d" />
       <path
         d="M262 160v-13a4 4 0 0 1 4-4h36a4 4 0 0 1 4 4v13"
-        fill="#d5e7a2"
-        stroke="#16483d"
+        fill="#ffad65"
+        stroke="#a34d23"
         strokeWidth="2"
       />
       <text
         x="271"
         y="155"
         fontSize="10"
-        fill="#16483d"
+        fill="#a34d23"
         fontWeight="700"
         fontFamily="sans-serif"
       >
         TAXI
       </text>
-      <circle cx="182" cy="291" r="30" fill="#143e35" />
-      <circle cx="182" cy="291" r="16" fill="#e3e5d9" />
-      <circle cx="182" cy="291" r="7" fill="#abbda8" />
-      <circle cx="421" cy="291" r="30" fill="#143e35" />
-      <circle cx="421" cy="291" r="16" fill="#e3e5d9" />
-      <circle cx="421" cy="291" r="7" fill="#abbda8" />
-      <path d="M264 232v-18c0-12-7-21-17-21s-18 9-18 21v18" fill="#718e73" />
+      <circle cx="182" cy="291" r="30" fill="#121213" />
+      <circle cx="182" cy="291" r="16" fill="#d6bda1" />
+      <circle cx="182" cy="291" r="7" fill="#7c6451" />
+      <circle cx="421" cy="291" r="30" fill="#121213" />
+      <circle cx="421" cy="291" r="16" fill="#d6bda1" />
+      <circle cx="421" cy="291" r="7" fill="#7c6451" />
+      <path d="M264 232v-18c0-12-7-21-17-21s-18 9-18 21v18" fill="#9a613d" />
       <circle cx="248" cy="191" r="10" fill="#cead83" />
-      <path d="M332 232v-18c0-12-7-21-17-21s-18 9-18 21v18" fill="#e4d293" />
+      <path d="M332 232v-18c0-12-7-21-17-21s-18 9-18 21v18" fill="#e0a56c" />
       <circle cx="316" cy="191" r="10" fill="#b98e68" />
       <path
         d="M71 278h-25m36-15H62"
-        stroke="#9bae94"
+        stroke="#a57750"
         strokeWidth="3"
         strokeLinecap="round"
       />
       <path
         d="M519 296v-33m0 17c-24-2-19-21-19-21 19 0 19 15 19 15m1-2c1-24 19-27 19-27 7 20-11 28-19 27"
-        fill="#95ad84"
+        fill="#a46b3d"
       />
       <rect
         x="195"
@@ -161,21 +164,21 @@ function TaxiArt({ small = false }) {
         width="153"
         height="44"
         rx="22"
-        fill="#fffef9"
-        stroke="#d8dfce"
+        fill="#1c1713"
+        stroke="#61412a"
       />
-      <circle cx="220" cy="77" r="12" fill="#e6eed8" />
-      <path d="m215 77 4 4 7-8" stroke="#527446" strokeWidth="2" />
-      <text x="240" y="82" fontSize="13" fill="#355441" fontFamily="sans-serif">
+      <circle cx="220" cy="77" r="12" fill="#342216" />
+      <path d="m215 77 4 4 7-8" stroke="#ff974d" strokeWidth="2" />
+      <text x="240" y="82" fontSize="13" fill="#e7b48d" fontFamily="sans-serif">
         Better, together.
       </text>
       <path
         d="M361 82c44 3 66 24 70 51"
-        stroke="#91a87b"
+        stroke="#a86d3a"
         strokeWidth="2"
         strokeDasharray="5 6"
       />
-      <circle cx="432" cy="142" r="5" fill="#91a87b" />
+      <circle cx="432" cy="142" r="5" fill="#a86d3a" />
     </svg>
   );
 }
@@ -277,7 +280,42 @@ function Modal({ title, subtitle, children, onClose }) {
     </div>
   );
 }
-function Landing({ onLogin, config, initialError }) {
+function Landing({ onLogin }) {
+  const stepsRef = useRef(null);
+  useEffect(() => {
+    if (
+      !("IntersectionObserver" in window) ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    const cards = Array.from(stepsRef.current?.children ?? []);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -32px 0px" },
+    );
+
+    for (const card of cards) {
+      card.classList.add("step-reveal");
+      observer.observe(card);
+    }
+
+    return () => {
+      observer.disconnect();
+      for (const card of cards) {
+        card.classList.remove("step-reveal", "is-visible");
+      }
+    };
+  }, []);
+
   const [phone, setPhone] = useState(""),
     [country, setCountry] = useState("+91"),
     [code, setCode] = useState(""),
@@ -333,9 +371,6 @@ function Landing({ onLogin, config, initialError }) {
       <main>
         <div className="landing-grid">
           <section className="hero">
-            <div className="eyebrow">
-              <span /> THE WAY HOME STARTS HERE
-            </div>
             <h1>
               Same airport.
               <br />
@@ -359,7 +394,7 @@ function Landing({ onLogin, config, initialError }) {
                 <Leaf size={16} /> A lighter footprint
               </span>
             </div>
-            <TaxiArt />
+            <NightDrive />
             <div className="art-caption">
               <span className="caption-line" /> A little company. A lighter
               fare. <span className="caption-line" />
@@ -367,23 +402,13 @@ function Landing({ onLogin, config, initialError }) {
           </section>
           <section className="login-wrap" id="login">
             <div className="login-card">
-              <div className="login-top">
-                <span className="mini-icon">
-                  <Plane size={21} />
-                </span>
-                <span className="mini-eyebrow">LET’S GET YOU HOME</span>
-              </div>
-              <h2>
-                {stage === "phone"
-                  ? "Your ride starts here."
-                  : "Check your messages."}
-              </h2>
-              <p className="muted">
-                {stage === "phone"
-                  ? "Sign in or join with your phone number."
-                  : "Enter the 6-digit code for " + country + " " + phone + "."}
-              </p>
-              <form onSubmit={submit}>
+              <h2>{stage === "phone" ? "Log in" : "Verify your number"}</h2>
+              {stage === "code" && (
+                <p className="muted">
+                  Enter the 6-digit code for {country} {phone}.
+                </p>
+              )}
+              <form className="login-form" onSubmit={submit}>
                 {stage === "phone" ? (
                   <Field label="Phone number">
                     <div className="phone-input">
@@ -438,21 +463,12 @@ function Landing({ onLogin, config, initialError }) {
                     )}
                   </>
                 )}
-                <ErrorText message={error || initialError} />
+                <ErrorText message={error} />
                 <Button busy={busy} className="full" type="submit">
-                  {stage === "phone"
-                    ? "Get verification code"
-                    : "Verify & continue"}
+                  {stage === "phone" ? "Continue" : "Verify & log in"}
                   <ArrowRight size={18} />
                 </Button>
-                {stage === "phone" ? (
-                  <p className="login-footnote">
-                    <ShieldCheck size={14} />
-                    {config?.developmentOtp
-                      ? "Development verification is enabled."
-                      : "We’ll send a one-time code. No passwords to remember."}
-                  </p>
-                ) : (
+                {stage === "code" && (
                   <div className="code-actions">
                     <button
                       type="button"
@@ -487,22 +503,6 @@ function Landing({ onLogin, config, initialError }) {
                   </div>
                 )}
               </form>
-              <div className="login-divider" />
-              <div className="welcome-note">
-                <span className="sun">✳</span>
-                <div>
-                  <strong>New around here?</strong>
-                  <p>One quick profile, and you’re part of the crew.</p>
-                </div>
-              </div>
-            </div>
-            <div className="under-card">
-              <span className="tiny-avatars">
-                <i>AS</i>
-                <i>RM</i>
-                <i>DK</i>
-              </span>
-              <span>For students. By a shared way home.</span>
             </div>
           </section>
         </div>
@@ -511,7 +511,7 @@ function Landing({ onLogin, config, initialError }) {
             <p className="eyebrow">LESS PLANNING. MORE GOING.</p>
             <h2>Three stops to a shared ride.</h2>
           </div>
-          <div className="steps">
+          <div className="steps" ref={stepsRef}>
             {[
               {
                 icon: UserRound,
@@ -532,7 +532,11 @@ function Landing({ onLogin, config, initialError }) {
                 text: "Your host accepts, you get notified, and you split the ride.",
               },
             ].map(({ icon: Icon, n, title, text }) => (
-              <div className="step" key={n}>
+              <div
+                className="step"
+                key={n}
+                style={{ "--reveal-delay": `${180 + (Number(n) - 1) * 140}ms` }}
+              >
                 <div className="step-top">
                   <Icon size={23} />
                   <span>{n}</span>
@@ -627,12 +631,25 @@ function ProfileForm({ user, onSave, onClose, first = false }) {
     </Modal>
   );
 }
-function PostForm({ onClose, onCreated }) {
-  const [destination, setDestination] = useState("Airport"),
+function RouteDirection({ value, onChange }) {
+  return (
+    <Field label="Route">
+      <select
+        required
+        value={value ? "campus" : "airport"}
+        onChange={(e) => onChange(e.target.value === "campus")}
+      >
+        <option value="airport">MIT Manipal campus → Airport</option>
+        <option value="campus">Airport → MIT Manipal campus</option>
+      </select>
+    </Field>
+  );
+}
+function PostForm({ onClose, onCreated, initialToCampus = false }) {
+  const [toCampus, setToCampus] = useState(initialToCampus),
     [date, setDate] = useState(tomorrow()),
     [time, setTime] = useState("12:00"),
-    [pickup, setPickup] = useState(`${tomorrow()}T08:30`),
-    [capacity, setCapacity] = useState(4),
+    [capacity, setCapacity] = useState(""),
     [notes, setNotes] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -650,9 +667,8 @@ function PostForm({ onClose, onCreated }) {
           setError("");
           try {
             await api.create({
-              destination: destination.trim(),
+              ...routeEndpoints(toCampus),
               flightAt: localInstant(date, time),
-              pickupAt: new Date(pickup).toISOString(),
               capacity: Number(capacity),
               notes,
             });
@@ -664,16 +680,27 @@ function PostForm({ onClose, onCreated }) {
           }
         }}
       >
-        <Field label="Airport / destination">
-          <input
+        <RouteDirection value={toCampus} onChange={setToCampus} />
+        <Field label="Cab capacity (including you) — required">
+          <select
             required
-            maxLength={100}
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-          />
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
+          >
+            <option value="" disabled>
+              Select capacity
+            </option>
+            {[2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <option key={n} value={n}>
+                {n} people
+              </option>
+            ))}
+          </select>
         </Field>
         <div className="form-row">
-          <Field label="Flight departure date">
+          <Field
+            label={toCampus ? "Flight arrival date" : "Flight departure date"}
+          >
             <input
               type="date"
               required
@@ -682,7 +709,9 @@ function PostForm({ onClose, onCreated }) {
               onChange={(e) => setDate(e.target.value)}
             />
           </Field>
-          <Field label="Flight departure time">
+          <Field
+            label={toCampus ? "Flight arrival time" : "Flight departure time"}
+          >
             <input
               type="time"
               required
@@ -691,29 +720,6 @@ function PostForm({ onClose, onCreated }) {
             />
           </Field>
         </div>
-        <Field
-          label="Cab pickup from campus"
-          hint="Choose a time that leaves enough room for travel and airport check-in."
-        >
-          <input
-            type="datetime-local"
-            required
-            value={pickup}
-            onChange={(e) => setPickup(e.target.value)}
-          />
-        </Field>
-        <Field label="Total seats, including you">
-          <select
-            value={capacity}
-            onChange={(e) => setCapacity(e.target.value)}
-          >
-            {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-              <option key={n} value={n}>
-                {n} people
-              </option>
-            ))}
-          </select>
-        </Field>
         <Field label="A note for your crew (optional)">
           <textarea
             maxLength={300}
@@ -733,16 +739,17 @@ function PostForm({ onClose, onCreated }) {
 }
 function RideCard({ ride, user, onJoin, onCancel, busy }) {
   const [expanded, setExpanded] = useState(false);
+  const toCampus = isToCampus(ride);
   const own = ride.creator.id === user.id;
   const status = ride.myRequestStatus;
   const inactive =
-    ride.status !== "OPEN" || new Date(ride.pickupAt) <= new Date();
+    ride.status !== "OPEN" || new Date(rideDeadline(ride)) <= new Date();
   return (
     <article className={`ride-card ${inactive ? "inactive" : ""}`}>
       <div className="ride-top">
-        <span className="route-tag">
+        <span className="route-tag" title={routeLabel(ride)}>
           <Plane size={13} />
-          {ride.destination}
+          <span>{routeLabel(ride)}</span>
         </span>
         <span className={`seat-tag ${inactive ? "neutral" : ""}`}>
           <span className="live-dot" />
@@ -755,7 +762,9 @@ function RideCard({ ride, user, onJoin, onCancel, busy }) {
       </div>
       <div className="ride-time">
         <div>
-          <span className="micro-label">FLIGHT DEPARTURE</span>
+          <span className="micro-label">
+            {toCampus ? "FLIGHT ARRIVAL" : "FLIGHT DEPARTURE"}
+          </span>
           <h3>
             {timeLabel(ride.flightAt)}
             <span>{dateLabel(ride.flightAt)}</span>
@@ -763,13 +772,15 @@ function RideCard({ ride, user, onJoin, onCancel, busy }) {
         </div>
         <Plane className="flight-icon" size={25} strokeWidth={1.5} />
       </div>
-      <div className="pickup">
-        <MapPin size={15} />
-        <span>Campus pickup</span>
-        <strong>
-          {timeLabel(ride.pickupAt)} · {dateLabel(ride.pickupAt)}
-        </strong>
-      </div>
+      {ride.pickupAt && (
+        <div className="pickup">
+          <MapPin size={15} />
+          <span>{toCampus ? "Airport pickup" : "Campus pickup"}</span>
+          <strong>
+            {timeLabel(ride.pickupAt)} · {dateLabel(ride.pickupAt)}
+          </strong>
+        </div>
+      )}
       <div className="ride-host">
         <span className={`avatar color-${ride.creator.id % 4}`}>
           {initials(ride.creator.name)}
@@ -889,7 +900,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
   const [page, setPage] = useState("find"),
     [date, setDate] = useState(tomorrow()),
     [time, setTime] = useState("12:00"),
-    [destination, setDestination] = useState("Airport"),
+    [toCampus, setToCampus] = useState(false),
     [rides, setRides] = useState([]),
     [myRides, setMyRides] = useState([]),
     [requests, setRequests] = useState([]),
@@ -904,6 +915,15 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     [showNotices, setShowNotices] = useState(false),
     [requestTab, setRequestTab] = useState("incoming");
   const searchRef = useRef(null);
+  const searchVersion = useRef(0);
+  function changeSearch(setter, value) {
+    setter(value);
+    searchVersion.current++;
+    searchRef.current = null;
+    setSearched(false);
+    setSearching(false);
+    setRides([]);
+  }
   const pending = requests.filter(
     (q) => q.incoming && q.status === "PENDING",
   ).length;
@@ -914,33 +934,44 @@ function Dashboard({ user, setUser, onLogout, toast }) {
       api.requests(),
       api.notices(),
     ]);
-    setMyRides(mine);
+    setMyRides(mine.filter((r) => r.status !== "CANCELLED"));
     setRequests(req);
     setNotices(not);
   }
   async function search(e) {
     e?.preventDefault();
-    const query = { flightAt: localInstant(date, time), destination };
+    const query = {
+      flightAt: localInstant(date, time),
+      ...routeEndpoints(toCampus, "Airport"),
+    };
+    const version = ++searchVersion.current;
     setSearching(true);
     setError("");
     try {
-      setRides(await api.search(query.flightAt, query.destination));
+      const results = await api.search(
+        query.flightAt,
+        query.destination,
+        query.origin,
+      );
+      if (version !== searchVersion.current) return;
+      setRides(results);
       searchRef.current = query;
       setSearched(true);
     } catch (e) {
-      setError(e.message);
+      if (version === searchVersion.current) setError(e.message);
     } finally {
-      setSearching(false);
+      if (version === searchVersion.current) setSearching(false);
     }
   }
   async function refreshResults() {
-    if (searchRef.current)
-      setRides(
-        await api.search(
-          searchRef.current.flightAt,
-          searchRef.current.destination,
-        ),
-      );
+    const query = searchRef.current;
+    if (!query) return;
+    const results = await api.search(
+      query.flightAt,
+      query.destination,
+      query.origin,
+    );
+    if (searchRef.current === query) setRides(results);
   }
   useEffect(() => {
     let live = true;
@@ -1027,18 +1058,6 @@ function Dashboard({ user, setUser, onLogout, toast }) {
             </button>
           ))}
         </nav>
-        <div className="sidebar-promo">
-          <span className="promo-icon">
-            <Leaf size={23} />
-          </span>
-          <h3>
-            Good company.
-            <br />
-            Smaller footprint.
-          </h3>
-          <p>One shared ride is one less cab on the road.</p>
-          <span className="promo-line" />
-        </div>
         <div className="sidebar-bottom">
           <button
             onClick={() => {
@@ -1173,13 +1192,13 @@ function Dashboard({ user, setUser, onLogout, toast }) {
         <main className="dashboard-content">
           <div className="page-heading">
             <div>
-              <p className="eyebrow">
-                {page === "find"
-                  ? `HEY, ${user.name.split(" ")[0].toUpperCase()} 👋`
-                  : page === "rides"
+              {page !== "find" && (
+                <p className="eyebrow">
+                  {page === "rides"
                     ? "YOUR JOURNEYS, TOGETHER"
                     : "A LITTLE MORE COMPANY"}
-              </p>
+                </p>
+              )}
               <h1>
                 {page === "find" ? (
                   <>
@@ -1195,13 +1214,13 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                   </>
                 )}
               </h1>
-              <p>
-                {page === "find"
-                  ? "Same destination. Similar flight time. A seat with your name on it."
-                  : page === "rides"
+              {page !== "find" && (
+                <p>
+                  {page === "rides"
                     ? "Cabs you’re hosting and rides you’ve joined."
                     : "Manage your incoming requests and keep track of the ones you’ve sent."}
-              </p>
+                </p>
+              )}
             </div>
             <Button onClick={() => setModal("post")}>
               <Plus size={18} /> Post a cab
@@ -1215,45 +1234,56 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                   <span>
                     <Search size={18} />
                   </span>
-                  <strong>When’s your flight?</strong>
-                  <p>
-                    We’ll find cabs with flights within <b>±1 hour</b> of yours.
-                  </p>
+                  <strong>
+                    {toCampus
+                      ? "When does your flight arrive?"
+                      : "When’s your flight?"}
+                  </strong>
                 </div>
                 <form className="search-form" onSubmit={search}>
-                  <Field label="Heading to">
-                    <div className="input-icon">
-                      <Plane size={18} />
-                      <input
-                        aria-label="Airport destination"
-                        required
-                        maxLength={100}
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                      />
-                    </div>
-                  </Field>
-                  <Field label="Flight departure date">
+                  <div className="search-direction">
+                    <RouteDirection
+                      value={toCampus}
+                      onChange={(value) => changeSearch(setToCampus, value)}
+                    />
+                  </div>
+                  <Field
+                    label={
+                      toCampus ? "Flight arrival date" : "Flight departure date"
+                    }
+                  >
                     <div className="input-icon">
                       <CalendarDays size={18} />
                       <input
-                        aria-label="Flight departure date"
+                        aria-label={
+                          toCampus
+                            ? "Flight arrival date"
+                            : "Flight departure date"
+                        }
                         type="date"
                         required
                         value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        onChange={(e) => changeSearch(setDate, e.target.value)}
                       />
                     </div>
                   </Field>
-                  <Field label="Flight departure time">
+                  <Field
+                    label={
+                      toCampus ? "Flight arrival time" : "Flight departure time"
+                    }
+                  >
                     <div className="input-icon">
                       <Clock3 size={18} />
                       <input
-                        aria-label="Flight departure time"
+                        aria-label={
+                          toCampus
+                            ? "Flight arrival time"
+                            : "Flight departure time"
+                        }
                         type="time"
                         required
                         value={time}
-                        onChange={(e) => setTime(e.target.value)}
+                        onChange={(e) => changeSearch(setTime, e.target.value)}
                       />
                     </div>
                   </Field>
@@ -1303,7 +1333,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                   }
                   text={
                     searched
-                      ? "Try another flight time or airport, or start a ride and let your crew find you."
+                      ? "Try another flight time or route, or start a ride and let your crew find you."
                       : "Tell us when you’re flying. We’ll connect you with students heading the same way."
                   }
                   action={
@@ -1318,19 +1348,6 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                   }
                 />
               )}
-              <div className="good-to-know">
-                <span>
-                  <ShieldCheck size={24} />
-                </span>
-                <div>
-                  <strong>A little heads-up before you head out</strong>
-                  <p>
-                    Double-check your pickup time, airport terminal, and luggage
-                    space with your host. A request becomes a confirmed seat
-                    only after it’s accepted.
-                  </p>
-                </div>
-              </div>
             </>
           )}
           {page === "rides" && (
@@ -1406,7 +1423,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                           <strong>
                             {q.incoming
                               ? q.student.name
-                              : `Your request to ${q.destination}`}
+                              : `Your request: ${routeLabel(q)}`}
                           </strong>
                           <span>
                             {q.incoming
@@ -1414,7 +1431,8 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                               : "Waiting for a great shared journey."}
                           </span>
                           <p>
-                            <Plane size={14} /> {q.destination} <span>·</span>{" "}
+                            <Plane size={14} /> {routeLabel(q)} <span>·</span>{" "}
+                            {isToCampus(q) ? "Arrival" : "Departure"}{" "}
                             {dateLabel(q.flightAt)}, {timeLabel(q.flightAt)}
                           </p>
                         </div>
@@ -1467,14 +1485,16 @@ function Dashboard({ user, setUser, onLogout, toast }) {
               )}
             </>
           )}
-          <footer className="dashboard-footer">
-            <span>
-              campuscab. <span>Better, together.</span>
-            </span>
-            <span>
-              <Leaf size={13} /> Share the ride. Lighten the footprint.
-            </span>
-          </footer>
+          {page !== "find" && (
+            <footer className="dashboard-footer">
+              <span>
+                campuscab. <span>Better, together.</span>
+              </span>
+              <span>
+                <Leaf size={13} /> Share the ride. Lighten the footprint.
+              </span>
+            </footer>
+          )}
         </main>
       </div>
       {modal === "profile" && (
@@ -1490,6 +1510,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
       )}
       {modal === "post" && (
         <PostForm
+          initialToCampus={toCampus}
           onClose={() => setModal(null)}
           onCreated={async () => {
             setModal(null);
@@ -1520,6 +1541,12 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                 setBusy("cancel");
                 try {
                   await api.cancel(modal.cancel.id);
+                  setMyRides((current) =>
+                    current.filter((r) => r.id !== modal.cancel.id),
+                  );
+                  setRides((current) =>
+                    current.filter((r) => r.id !== modal.cancel.id),
+                  );
                   setModal(null);
                   await Promise.all([refresh(), refreshResults()]);
                   toast("Ride cancelled. Your passengers have been notified.");
@@ -1570,9 +1597,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
 }
 function App() {
   const [user, setUser] = useState(null),
-    [config, setConfig] = useState(null),
     [booting, setBooting] = useState(true),
-    [initialError, setInitialError] = useState(""),
     [toast, setToast] = useState("");
   const toastTimer = useRef();
   function notify(text) {
@@ -1582,13 +1607,16 @@ function App() {
   }
   useEffect(() => {
     let active = true;
-    Promise.allSettled([api.config(), api.me()]).then(([c, u]) => {
-      if (!active) return;
-      if (c.status === "fulfilled") setConfig(c.value);
-      else setInitialError(c.reason.message);
-      if (u.status === "fulfilled") setUser(u.value);
-      setBooting(false);
-    });
+    api
+      .me()
+      .then((u) => {
+        if (active) setUser(u);
+      })
+      // Visitors without a session start at the phone login form.
+      .catch(() => {})
+      .finally(() => {
+        if (active) setBooting(false);
+      });
     return () => {
       active = false;
       clearTimeout(toastTimer.current);
@@ -1603,15 +1631,9 @@ function App() {
     );
   return (
     <>
+      {!user && <CursorGlow />}
       {!user ? (
-        <Landing
-          config={config}
-          initialError={initialError}
-          onLogin={(u) => {
-            setInitialError("");
-            setUser(u);
-          }}
-        />
+        <Landing onLogin={setUser} />
       ) : !complete(user) ? (
         <div className="onboarding">
           <header>
