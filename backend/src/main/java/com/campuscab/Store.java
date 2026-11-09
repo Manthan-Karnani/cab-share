@@ -15,6 +15,15 @@ import org.springframework.web.server.ResponseStatusException;
 class Store {
 
   static final String CAMPUS = "MIT Manipal campus";
+  static final String KMC_CAMPUS = "KMC Manipal campus";
+
+  static String campusName(String name) {
+    return List.of(CAMPUS, KMC_CAMPUS)
+      .stream()
+      .filter(campus -> campus.equalsIgnoreCase(name))
+      .findFirst()
+      .orElse(null);
+  }
 
   final JdbcTemplate db;
 
@@ -236,14 +245,16 @@ class Store {
     requireComplete(creator);
     origin = origin == null ? CAMPUS : origin.trim();
     destination = destination.trim();
-    boolean toCampus = CAMPUS.equalsIgnoreCase(destination);
+    String originCampus = campusName(origin);
+    String destinationCampus = campusName(destination);
+    boolean toCampus = destinationCampus != null;
     if (
       origin.isBlank() ||
       destination.isBlank() ||
-      toCampus == CAMPUS.equalsIgnoreCase(origin)
+      toCampus == (originCampus != null)
     ) throw fail(
       HttpStatus.BAD_REQUEST,
-      "Choose a route between an airport and MIT Manipal campus."
+      "Choose a route between an airport and MIT or KMC Manipal campus."
     );
     if (capacity < 2 || capacity > 8) throw fail(
       HttpStatus.BAD_REQUEST,
@@ -269,8 +280,8 @@ class Store {
     db.update(
       "INSERT INTO rides(creator_id,destination,origin,flight_at,pickup_at,capacity,notes,status,created_at) VALUES(?,?,?,?,?,?,?,'OPEN',?)",
       creator,
-      toCampus ? CAMPUS : destination,
-      toCampus ? origin : CAMPUS,
+      toCampus ? destinationCampus : destination,
+      toCampus ? origin : originCampus,
       Timestamp.from(flight),
       pickup == null ? null : Timestamp.from(pickup),
       capacity,

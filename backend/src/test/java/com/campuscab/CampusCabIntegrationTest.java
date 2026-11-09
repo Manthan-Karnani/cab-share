@@ -237,6 +237,98 @@ class CampusCabIntegrationTest {
   }
 
   @Test
+  void kmcRoutesPersistAndMatchSeparatelyFromMit() throws Exception {
+    Instant at = flight.truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+    for (boolean toCampus : new boolean[] { false, true }) {
+      String origin = toCampus ? "Airport" : Store.KMC_CAMPUS;
+      String destination = toCampus ? Store.KMC_CAMPUS : "Airport";
+      mvc
+        .perform(
+          post("/api/rides")
+            .with(user(String.valueOf(host)))
+            .with(csrf())
+            .contentType("application/json")
+            .content(
+              """
+              {"origin":" %s ","destination":" %s ","flightAt":"%s","capacity":4}
+              """.formatted(origin.toLowerCase(), destination.toLowerCase(), at)
+            )
+        )
+        .andExpect(status().isOk())
+        .andExpect(
+          jsonPath(toCampus ? "$.destination" : "$.origin").value(
+            Store.KMC_CAMPUS
+          )
+        );
+      store.create(
+        host,
+        toCampus ? Store.CAMPUS : "Airport",
+        at,
+        null,
+        4,
+        "",
+        toCampus ? "Airport" : Store.CAMPUS
+      );
+      var kmc = store.search(alice, at, destination, origin).get(0);
+      for (long offset : new long[] { -3600, 0, 3600 }) {
+        mvc
+          .perform(
+            get("/api/rides")
+              .with(user(String.valueOf(alice)))
+              .param("origin", origin)
+              .param("destination", destination)
+              .param("flightAt", at.plusSeconds(offset).toString())
+          )
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.length()").value(1))
+          .andExpect(jsonPath("$[0].id").value(kmc.id()));
+      }
+      for (long offset : new long[] { -3601, 3601 }) {
+        assertTrue(
+          store
+            .search(alice, at.plusSeconds(offset), destination, origin)
+            .isEmpty()
+        );
+      }
+      assertThrows(Exception.class, () ->
+        store.create(
+          host,
+          destination,
+          at,
+          toCampus ? at.minusSeconds(1) : at.plusSeconds(1),
+          4,
+          "",
+          origin
+        )
+      );
+      store.create(
+        host,
+        destination,
+        at,
+        toCampus ? at.plusSeconds(1800) : at.minusSeconds(1800),
+        4,
+        "",
+        origin
+      );
+      var request = store.request(kmc.id(), alice);
+      assertEquals(kmc.origin(), request.origin());
+      assertEquals(kmc.destination(), request.destination());
+      store.decide(request.id(), host, true);
+      assertEquals(2, store.ride(kmc.id(), host).occupied());
+    }
+    for (String origin : new String[] { Store.CAMPUS, Store.KMC_CAMPUS }) {
+      for (String destination : new String[] {
+        Store.CAMPUS,
+        Store.KMC_CAMPUS,
+      }) {
+        assertThrows(Exception.class, () ->
+          store.create(host, destination, at, null, 4, "", origin)
+        );
+      }
+    }
+  }
+
+  @Test
   void ownershipDuplicateAndProfileValidation() {
     var r = ride(3);
     var q = store.request(r.id(), alice);

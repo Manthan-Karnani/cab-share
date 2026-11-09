@@ -7,7 +7,13 @@ import {
   rideView,
   createDemoApi,
 } from "./demo.js";
-import { CAMPUS, routeEndpoints } from "./routes.js";
+import {
+  CAMPUS,
+  KMC_CAMPUS,
+  ROUTES,
+  isToCampus,
+  routeEndpoints,
+} from "./routes.js";
 const memory = () => {
   const m = new Map();
   return {
@@ -116,7 +122,7 @@ test("existing demo rides without an origin still match campus-to-airport search
     ),
   );
 });
-test("simplified posting requires capacity and supports both routes without pickup or notes", async () => {
+test("simplified posting requires capacity and supports all four routes without pickup or notes", async () => {
   const storage = memory();
   const api = createDemoApi(storage, memory());
   await api.sendOtp("+919000000101");
@@ -133,8 +139,7 @@ test("simplified posting requires capacity and supports both routes without pick
     }),
     /future/,
   );
-  for (const toCampus of [false, true]) {
-    const route = routeEndpoints(toCampus);
+  for (const route of ROUTES) {
     const ride = await api.create({ ...body, ...route });
     assert.equal(ride.pickupAt, null);
     assert.equal(ride.notes, "");
@@ -147,6 +152,8 @@ test("simplified posting requires capacity and supports both routes without pick
     await api.sendOtp("+919000000102");
     await api.verifyOtp("123456");
     const request = await api.join(ride.id);
+    assert.equal(request.origin, route.origin);
+    assert.equal(request.destination, route.destination);
     await api.logout();
     await api.sendOtp("+919000000101");
     await api.verifyOtp("123456");
@@ -162,6 +169,66 @@ test("simplified posting requires capacity and supports both routes without pick
         (r) => r.id === ride.id,
       ),
     );
+  }
+});
+test("KMC matching isolates each campus and direction within the one-hour window", async () => {
+  const api = createDemoApi(memory(), memory());
+  await api.sendOtp("+919000000101");
+  await api.verifyOtp("123456");
+  const flightAt = new Date(Date.now() + 2 * 86400000).toISOString();
+  const rides = [];
+  for (const route of ROUTES) {
+    rides.push(
+      await api.create({
+        origin: ` ${route.origin.toLowerCase()} `,
+        destination: ` ${route.destination.toLowerCase()} `,
+        flightAt,
+        capacity: 4,
+      }),
+    );
+  }
+  for (const [index, route] of ROUTES.entries()) {
+    for (const offset of [-3600000, 0, 3600000]) {
+      const at = new Date(+new Date(flightAt) + offset).toISOString();
+      assert.deepEqual(
+        (await api.search(at, route.destination, route.origin)).map(
+          (r) => r.id,
+        ),
+        [rides[index].id],
+      );
+    }
+    for (const offset of [-3600001, 3600001]) {
+      const at = new Date(+new Date(flightAt) + offset).toISOString();
+      assert.deepEqual(
+        await api.search(at, route.destination, route.origin),
+        [],
+      );
+    }
+    const toCampus = isToCampus(route);
+    assert.equal(isToCampus(rides[index]), toCampus);
+    assert.equal(
+      toCampus ? rides[index].destination : rides[index].origin,
+      toCampus ? route.destination : route.origin,
+    );
+    await assert.rejects(
+      api.create({
+        ...route,
+        flightAt,
+        pickupAt: new Date(
+          +new Date(flightAt) + (toCampus ? -1000 : 1000),
+        ).toISOString(),
+        capacity: 4,
+      }),
+      /pickup/,
+    );
+  }
+  for (const origin of [CAMPUS, KMC_CAMPUS]) {
+    for (const destination of [CAMPUS, KMC_CAMPUS]) {
+      await assert.rejects(
+        api.create({ origin, destination, flightAt, capacity: 4 }),
+        /Choose a route/,
+      );
+    }
   }
 });
 test("phone login, profile requirement, request, approval, and notification across accounts", async () => {

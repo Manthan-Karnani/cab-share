@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { api, DEMO } from "./api";
 import { tomorrow, localInstant } from "./demo";
-import { isToCampus, routeEndpoints, routeLabel, rideDeadline } from "./routes";
+import { ROUTES, isToCampus, routeLabel, rideDeadline } from "./routes";
 import CursorGlow from "./CursorGlow";
 import NightDrive from "./NightDrive";
 import "./styles.css";
@@ -634,25 +634,26 @@ function ProfileForm({ user, onSave, onClose, first = false }) {
 function RouteDirection({ value, onChange }) {
   return (
     <Field label="Route">
-      <select
-        required
-        value={value ? "campus" : "airport"}
-        onChange={(e) => onChange(e.target.value === "campus")}
-      >
-        <option value="airport">MIT Manipal campus → Airport</option>
-        <option value="campus">Airport → MIT Manipal campus</option>
+      <select required value={value} onChange={(e) => onChange(e.target.value)}>
+        {ROUTES.map((route) => (
+          <option key={route.id} value={route.id}>
+            {routeLabel(route)}
+          </option>
+        ))}
       </select>
     </Field>
   );
 }
-function PostForm({ onClose, onCreated, initialToCampus = false }) {
-  const [toCampus, setToCampus] = useState(initialToCampus),
+function PostForm({ onClose, onCreated, initialRouteId = ROUTES[0].id }) {
+  const [routeId, setRouteId] = useState(initialRouteId),
     [date, setDate] = useState(tomorrow()),
     [time, setTime] = useState("12:00"),
     [capacity, setCapacity] = useState(""),
     [notes, setNotes] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const route = ROUTES.find((route) => route.id === routeId);
+  const toCampus = isToCampus(route);
   return (
     <Modal
       title="Make room for company."
@@ -667,7 +668,8 @@ function PostForm({ onClose, onCreated, initialToCampus = false }) {
           setError("");
           try {
             await api.create({
-              ...routeEndpoints(toCampus),
+              origin: route.origin,
+              destination: route.destination,
               flightAt: localInstant(date, time),
               capacity: Number(capacity),
               notes,
@@ -680,7 +682,7 @@ function PostForm({ onClose, onCreated, initialToCampus = false }) {
           }
         }}
       >
-        <RouteDirection value={toCampus} onChange={setToCampus} />
+        <RouteDirection value={routeId} onChange={setRouteId} />
         <Field label="Cab capacity (including you) — required">
           <select
             required
@@ -900,7 +902,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
   const [page, setPage] = useState("find"),
     [date, setDate] = useState(tomorrow()),
     [time, setTime] = useState("12:00"),
-    [toCampus, setToCampus] = useState(false),
+    [routeId, setRouteId] = useState(ROUTES[0].id),
     [rides, setRides] = useState([]),
     [myRides, setMyRides] = useState([]),
     [requests, setRequests] = useState([]),
@@ -914,6 +916,8 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     [mobileNav, setMobileNav] = useState(false),
     [showNotices, setShowNotices] = useState(false),
     [requestTab, setRequestTab] = useState("incoming");
+  const route = ROUTES.find((route) => route.id === routeId);
+  const toCampus = isToCampus(route);
   const searchRef = useRef(null);
   const searchVersion = useRef(0);
   function changeSearch(setter, value) {
@@ -942,7 +946,8 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     e?.preventDefault();
     const query = {
       flightAt: localInstant(date, time),
-      ...routeEndpoints(toCampus, "Airport"),
+      origin: route.origin,
+      destination: route.destination,
     };
     const version = ++searchVersion.current;
     setSearching(true);
@@ -1243,8 +1248,8 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                 <form className="search-form" onSubmit={search}>
                   <div className="search-direction">
                     <RouteDirection
-                      value={toCampus}
-                      onChange={(value) => changeSearch(setToCampus, value)}
+                      value={routeId}
+                      onChange={(value) => changeSearch(setRouteId, value)}
                     />
                   </div>
                   <Field
@@ -1510,7 +1515,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
       )}
       {modal === "post" && (
         <PostForm
-          initialToCampus={toCampus}
+          initialRouteId={routeId}
           onClose={() => setModal(null)}
           onCreated={async () => {
             setModal(null);

@@ -2,7 +2,7 @@
 
 A college airport cab-sharing app built with **React + Vite**, **Java 17+ / Spring Boot 3.5**, and **MySQL 8.4**.
 
-Students verify their phone, complete their name and hostel/block number, then search or post a cab. Both **MIT Manipal campus → airport** and **airport → MIT Manipal campus** are supported. Search matches the **same origin and destination and flight times within ±60 minutes**, inclusive; anything farther away is excluded. Use flight departure time for campus-to-airport rides and flight arrival time for airport-to-campus rides. Posting requires the route, capacity (including the host), and flight date/time; a note is optional. A request is **not a reserved seat** until accepted.
+Students verify their phone, complete their name and hostel/block number, then search or post a cab. Four routes are supported: **MIT Manipal campus → airport**, **airport → MIT Manipal campus**, **KMC Manipal campus → airport**, and **airport → KMC Manipal campus**. Search matches the **same origin and destination and flight times within ±60 minutes**, inclusive; anything farther away is excluded. Use flight departure time for campus-to-airport rides and flight arrival time for airport-to-campus rides. Posting requires the route, capacity (including the host), and flight date/time; a note is optional. A request is **not a reserved seat** until accepted.
 
 ## Run locally
 
@@ -59,7 +59,7 @@ npm run dev
 
 Open the URL Vite prints (normally **http://127.0.0.1:5173**). Vite loads the frontend settings from `.env` and proxies `/api` to the Java backend on port 8080, keeping authentication same-origin. Leave `VITE_API_URL` empty for this setup. The real API is the default: it never silently falls back to sample data. Keep this terminal running as well. On subsequent starts, start MySQL and repeat the backend and frontend startup commands; you do not need to recreate the database, copy `.env`, or reinstall unchanged dependencies.
 
-On Find a cab and Post a cab, choose either airport → MIT Manipal campus or MIT Manipal campus → airport. The airport endpoint is fixed to `Airport`. Posting also requires selecting capacity (2–8, including you) and a future flight departure/arrival date and time; the note is optional. There is no separate pickup-time field. New rides remain available until their flight time. Existing rides retain any previously supplied pickup time and use that as their availability cutoff. Restart the backend after updating: Flyway adds the `origin` column and makes `pickup_at` optional automatically, preserving existing rides.
+On Find a cab and Post a cab, choose MIT Manipal campus or KMC Manipal campus in either direction to/from the airport. The airport endpoint is fixed to `Airport`. Posting also requires selecting capacity (2–8, including you) and a future flight departure/arrival date and time; the note is optional. There is no separate pickup-time field. New rides remain available until their flight time. Existing rides retain any previously supplied pickup time and use that as their availability cutoff. Restart the backend after updating: Flyway adds the `origin` column and makes `pickup_at` optional automatically, preserving existing rides.
 
 ## Browser-only demo
 
@@ -82,7 +82,7 @@ Seed host numbers: Ananya `+919000000101`, Arjun `+919000000102`, Riya `+9190000
 
 - E.164 phone login with Twilio Verify integration; five-minute challenge expiry, attempt limits and resend cooldown.
 - Mandatory name and block profile; immutable verified phone number.
-- Posting with two fixed routes, mandatory capacity (2–8, including the host), mandatory flight departure/arrival date and time, and optional notes.
+- Posting with four fixed routes, mandatory capacity (2–8, including the host), mandatory flight departure/arrival date and time, and optional notes.
 - Inclusive ±60-minute matching on both route endpoints and flight departure/arrival time, available seats, host contact, and expandable passenger contacts for authenticated students with complete profiles.
 - Incoming and outgoing requests; only the host can accept/reject. Duplicate/self requests are blocked.
 - Transactional seat limits: requests and decisions lock the ride. READ COMMITTED isolation prevents stale capacity reads after waiting for the lock, including on MySQL.
@@ -111,7 +111,7 @@ cd backend
 mvn test
 ```
 
-The 8 frontend tests cover matching boundaries in both directions, route isolation, return-ride creation and requests, compatibility with existing demo rides, capacity/ownership, simplified posting without pickup time or notes, cancellation removal after reload, and the cross-account request-to-notification flow. The 13 backend integration tests use **H2 in MySQL compatibility mode**, applying the actual Flyway migrations. They cover login/session persistence, profile gating, CSRF/authentication, matching boundaries, route isolation, return-ride API persistence, legacy pickup validation, required capacity and future flight times, posting/joining/approval/expiry without pickup time, duplicates/ownership, rejection, cancellation removal from ride lists, and competing approvals for the last seat. Java compilation, all tests, and the frontend production build pass. Real MySQL runtime validation remains to be done.
+The 9 frontend tests cover matching boundaries in both directions, route isolation between MIT and KMC in both directions, return-ride creation and requests, compatibility with existing demo rides, capacity/ownership, simplified posting without pickup time or notes, cancellation removal after reload, and the cross-account request-to-notification flow. The 14 backend integration tests use **H2 in MySQL compatibility mode**, applying the actual Flyway migrations. They cover login/session persistence, profile gating, CSRF/authentication, matching boundaries, route isolation between MIT and KMC in both directions, KMC route API persistence and requests, return-ride API persistence, legacy pickup validation, required capacity and future flight times, posting/joining/approval/expiry without pickup time, duplicates/ownership, rejection, cancellation removal from ride lists, and competing approvals for the last seat. Java compilation, all tests, and the frontend production build pass. Real MySQL runtime validation remains to be done.
 
 ## Structure
 

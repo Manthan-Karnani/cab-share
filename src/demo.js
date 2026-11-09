@@ -1,5 +1,5 @@
 // Explicit browser-only demo. The real API adapter never falls back to this data.
-import { CAMPUS, isToCampus, rideDeadline } from "./routes.js";
+import { CAMPUS, campusName, isToCampus, rideDeadline } from "./routes.js";
 export const tomorrow = () => {
   const d = new Date();
   d.setDate(d.getDate() + 1);
@@ -241,13 +241,9 @@ export function createDemoApi(
       const origin = (body.origin ?? CAMPUS).trim();
       const destination = body.destination.trim();
       const toCampus = isToCampus({ destination });
-      if (
-        !origin ||
-        !destination ||
-        toCampus === (origin.toLowerCase() === CAMPUS.toLowerCase())
-      )
+      if (!origin || !destination || toCampus === Boolean(campusName(origin)))
         throw Error(
-          "Choose a route between an airport and MIT Manipal campus.",
+          "Choose a route between an airport and MIT or KMC Manipal campus.",
         );
       const flight = new Date(body.flightAt);
       const pickup = body.pickupAt == null ? null : new Date(body.pickupAt);
@@ -277,8 +273,8 @@ export function createDemoApi(
           ...body,
           pickupAt: body.pickupAt ?? null,
           notes: body.notes?.trim() ?? "",
-          origin: toCampus ? origin : CAMPUS,
-          destination: toCampus ? CAMPUS : destination,
+          origin: campusName(origin) ?? origin,
+          destination: campusName(destination) ?? destination,
           id: d.nextId++,
           creatorId: uid(),
           status: "OPEN",
