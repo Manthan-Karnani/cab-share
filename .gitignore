@@ -7,3 +7,6 @@ backend/target/
 *.log
 .DS_Store
 .openai/local*
+
+# Personal learning references (local only)
+/output/pdf/
