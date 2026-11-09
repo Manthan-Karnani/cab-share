@@ -259,22 +259,6 @@ export default function NightDrive() {
           </g>
         </g>
 
-        <g fontSize="9" fontFamily="DM Sans, sans-serif" letterSpacing="1.7">
-          <circle
-            className="drive-beacon"
-            cx="66"
-            cy="46"
-            r="3"
-            fill="#ff9449"
-          />
-          <text x="79" y="49" fill="#b7957b">
-            CAMPUS
-          </text>
-          <path d="M148 46h25m-4-3 4 3-4 3" stroke="#77533a" />
-          <text x="183" y="49" fill="#b7957b">
-            AIRPORT
-          </text>
-        </g>
       </svg>
       <button
         className="drive-toggle icon-button"

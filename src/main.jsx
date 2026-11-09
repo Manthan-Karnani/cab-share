@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   CarFront,
   Plane,
-  ShieldCheck,
   Users,
   Phone,
   MapPin,
@@ -354,9 +353,6 @@ function Landing({ onLogin }) {
           <a href="#how-it-works">
             How it works <ArrowUpRight size={15} />
           </a>
-          <span className="campus-tag">
-            <span className="live-dot" /> Your campus. Your people.
-          </span>
         </nav>
       </header>
       {DEMO && (
@@ -372,7 +368,7 @@ function Landing({ onLogin }) {
         <div className="landing-grid">
           <section className="hero">
             <h1>
-              Same airport.
+              Same route.
               <br />
               Shared ride.
               <br />
@@ -383,22 +379,7 @@ function Landing({ onLogin }) {
               <br className="desktop-break" /> Split the cab, share the journey,
               and head home together.
             </p>
-            <div className="hero-pills">
-              <span>
-                <ShieldCheck size={16} /> Phone verified
-              </span>
-              <span>
-                <Users size={16} /> Campus connected
-              </span>
-              <span>
-                <Leaf size={16} /> A lighter footprint
-              </span>
-            </div>
             <NightDrive />
-            <div className="art-caption">
-              <span className="caption-line" /> A little company. A lighter
-              fare. <span className="caption-line" />
-            </div>
           </section>
           <section className="login-wrap" id="login">
             <div className="login-card">
@@ -508,7 +489,6 @@ function Landing({ onLogin }) {
         </div>
         <section className="how-section" id="how-it-works">
           <div className="how-heading">
-            <p className="eyebrow">LESS PLANNING. MORE GOING.</p>
             <h2>Three stops to a shared ride.</h2>
           </div>
           <div className="steps" ref={stepsRef}>
@@ -548,13 +528,6 @@ function Landing({ onLogin }) {
           </div>
         </section>
       </main>
-      <footer className="landing-footer">
-        <Logo />
-        <span>A shared ride makes a better journey.</span>
-        <span>
-          Made for campus life <span className="heart">♡</span>
-        </span>
-      </footer>
     </div>
   );
 }

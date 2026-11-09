@@ -133,16 +133,6 @@ button {
   align-items: center;
   gap: 6px;
 }
-.campus-tag {
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 9px 13px;
-  font-size: 11px;
-  color: var(--text-muted);
-  display: flex;
-  gap: 7px;
-  align-items: center;
-}
 .live-dot {
   display: inline-block;
   flex-shrink: 0;
@@ -205,40 +195,11 @@ button {
   color: var(--text-muted);
   margin-top: 22px;
 }
-.hero-pills {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-top: 22px;
-  flex-wrap: wrap;
-}
-.hero-pills > span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
 .taxi-art {
   width: 100%;
   display: block;
   max-width: 540px;
   margin: 24px 0 0;
-}
-.art-caption {
-  font-size: 10px;
-  letter-spacing: 0.3px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 8px;
-}
-.caption-line {
-  width: 40px;
-  height: 1px;
-  background: var(--border);
 }
 .login-wrap {
   padding-top: 6px;
@@ -403,15 +364,10 @@ textarea {
 .how-heading {
   text-align: center;
 }
-.how-heading .eyebrow {
-  justify-content: center;
-  font-size: 9px;
-}
 .how-heading h2 {
   font-size: 26px;
   font-weight: 650;
   letter-spacing: -1px;
-  margin-top: 9px;
 }
 .steps {
   display: grid;
@@ -460,33 +416,6 @@ textarea {
   color: var(--text-muted);
   margin-top: 9px;
   max-width: 245px;
-}
-.landing-footer {
-  max-width: 1210px;
-  margin: auto;
-  padding: 22px 48px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 9px;
-  color: var(--text-muted);
-}
-.landing-footer .logo {
-  font-size: 17px;
-}
-.landing-footer .logo-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-}
-.landing-footer .logo-icon svg {
-  width: 18px;
-}
-.heart {
-  font-size: 15px;
-  color: var(--accent-soft);
-  margin-left: 4px;
 }
 .error {
   display: flex;
@@ -1622,10 +1551,6 @@ textarea {
   .hero h1 {
     font-size: 48px;
   }
-  .hero-pills {
-    gap: 12px;
-    font-size: 9px;
-  }
   .how-section {
     margin-left: 36px;
     margin-right: 36px;
@@ -1691,10 +1616,6 @@ textarea {
   .landing-header nav > a {
     font-size: 11px;
   }
-  .campus-tag {
-    font-size: 9px;
-    padding: 7px 9px;
-  }
   .landing-grid {
     gap: 28px;
     padding: 45px 28px;
@@ -1705,12 +1626,6 @@ textarea {
   }
   .hero-copy {
     font-size: 12px;
-  }
-  .hero-pills {
-    gap: 11px;
-  }
-  .hero-pills > span:last-child {
-    display: none;
   }
   .login-card {
     padding: 28px 23px;
@@ -1737,12 +1652,6 @@ textarea {
   }
   .step p {
     font-size: 10px;
-  }
-  .landing-footer {
-    padding: 22px 28px;
-  }
-  .landing-footer > span:nth-child(2) {
-    display: none;
   }
   .sidebar {
     width: 180px;
@@ -1847,9 +1756,6 @@ textarea {
   .landing-header nav > a {
     font-size: 10px;
   }
-  .campus-tag {
-    display: none;
-  }
   .landing-grid {
     grid-template-columns: 1fr;
     padding: 34px 24px 36px;
@@ -1873,18 +1779,9 @@ textarea {
     font-size: 12px;
     margin-top: 17px;
   }
-  .hero-pills {
-    justify-content: center;
-    margin-top: 16px;
-    font-size: 9px;
-    gap: 15px;
-  }
   .hero .taxi-art {
     max-width: 310px;
     margin: 18px auto -7px;
-  }
-  .art-caption {
-    display: none;
   }
   .login-wrap {
     padding-top: 0;
@@ -1929,15 +1826,6 @@ textarea {
   .step p {
     max-width: none;
     font-size: 11px;
-  }
-  .landing-footer {
-    padding: 18px 24px;
-  }
-  .landing-footer > span:last-child {
-    font-size: 8px;
-  }
-  .landing-footer .logo {
-    font-size: 16px;
   }
   .sidebar {
     width: 224px;
@@ -2280,10 +2168,15 @@ textarea {
   }
 }
 
-/* A restrained orange glow on charcoal surfaces. */
+/* Faint warm grid lines and fine dots over the charcoal landing page. */
 .landing {
   background:
-    radial-gradient(ellipse at 16% 28%, #ff853e08, transparent 52%), var(--page);
+    radial-gradient(ellipse at 16% 28%, #ff853e08, transparent 52%),
+    radial-gradient(circle at 8px 8px, #ffb17d1a 0.8px, transparent 1px)
+      0 0 / 16px 16px,
+    linear-gradient(to right, #ffb17d0d 1px, transparent 1px) 0 0 / 64px 64px,
+    linear-gradient(to bottom, #ffb17d0d 1px, transparent 1px) 0 0 / 64px 64px,
+    var(--page);
 }
 .logo-icon {
   color: var(--on-accent);
@@ -2424,8 +2317,7 @@ textarea::selection,
   transform-origin: 309px 176px;
   animation: drive-wheel 70s linear infinite;
 }
-.drive-stars,
-.drive-beacon {
+.drive-stars {
   animation: drive-ambient 4s ease-in-out infinite;
 }
 .drive-headlight {
