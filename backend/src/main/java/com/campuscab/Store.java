@@ -186,6 +186,21 @@ class Store {
       .orElseThrow(() -> fail(HttpStatus.NOT_FOUND, "Ride not found."));
   }
 
+  List<Ride> suggestions(long viewer) {
+    requireComplete(viewer);
+    Timestamp now = Timestamp.from(Instant.now());
+    return db
+      .query(
+        "SELECT r.id FROM rides r WHERE r.status='OPEN' AND COALESCE(r.pickup_at,r.flight_at)>? AND r.flight_at>? AND r.capacity > (SELECT COUNT(*) + 1 FROM join_requests j WHERE j.ride_id=r.id AND j.status='ACCEPTED') ORDER BY r.flight_at,r.id LIMIT 3",
+        (r, n) -> r.getLong(1),
+        now,
+        now
+      )
+      .stream()
+      .map(id -> ride(id, viewer))
+      .toList();
+  }
+
   List<Ride> search(long viewer, Instant flight, String destination) {
     return search(viewer, flight, destination, CAMPUS);
   }

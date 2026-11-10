@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   seed,
   searchRides,
+  suggestedRides,
   decideRequest,
   rideView,
   createDemoApi,
@@ -22,6 +23,43 @@ const memory = () => {
     removeItem: (k) => m.delete(k),
   };
 };
+test("suggestions return the three nearest upcoming cabs across routes after excluding unavailable rides", async () => {
+  const d = seed();
+  const base = Date.now();
+  const makeRide = (id, seconds, overrides = {}) => ({
+    ...d.rides[0],
+    id,
+    flightAt: new Date(base + seconds * 1000).toISOString(),
+    pickupAt: null,
+    ...overrides,
+  });
+  d.rides = [
+    makeRide(10, 100, { capacity: 1 }),
+    makeRide(11, 200, { status: "CANCELLED" }),
+    makeRide(12, -100),
+    makeRide(13, 300, { pickupAt: new Date(base - 1000).toISOString() }),
+    makeRide(14, 400, { capacity: 2 }),
+    makeRide(20, 700),
+    makeRide(18, 600, { origin: "Airport", destination: KMC_CAMPUS }),
+    makeRide(17, 500, { origin: KMC_CAMPUS }),
+    makeRide(19, 600),
+  ];
+  d.requests = [{ id: 1, rideId: 14, studentId: 4, status: "ACCEPTED" }];
+  assert.deepEqual(
+    suggestedRides(d, 2).map((r) => r.id),
+    [17, 18, 19],
+  );
+  assert.deepEqual(suggestedRides({ ...d, rides: [] }, 2), []);
+  assert.equal(suggestedRides({ ...d, rides: [d.rides[5]] }, 2).length, 1);
+
+  const api = createDemoApi(memory(), memory());
+  await assert.rejects(api.suggestions(), /sign in/);
+  await api.sendOtp("+919999999999");
+  await api.verifyOtp("123456");
+  await assert.rejects(api.suggestions(), /profile/);
+  await api.profile({ name: "Test Student", blockNumber: "B-4" });
+  assert.equal((await api.suggestions()).length, 3);
+});
 test("matching includes exactly 60 minutes and excludes 60 minutes plus one second", () => {
   const d = seed();
   const base = d.rides[0].flightAt;

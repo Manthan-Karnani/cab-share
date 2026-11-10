@@ -51,6 +51,11 @@ class RideController {
     return store.search(id(p), flightAt, destination, origin);
   }
 
+  @GetMapping("/api/rides/suggestions")
+  List<Store.Ride> suggestions(Principal p) {
+    return store.suggestions(id(p));
+  }
+
   @PostMapping("/api/rides")
   Store.Ride create(Principal p, @Valid @RequestBody NewRide r) {
     return store.create(

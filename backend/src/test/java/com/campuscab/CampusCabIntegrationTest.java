@@ -65,6 +65,105 @@ class CampusCabIntegrationTest {
   }
 
   @Test
+  void suggestionsReturnNearestAvailableCabsAcrossRoutes() throws Exception {
+    assertTrue(store.suggestions(alice).isEmpty());
+    store.create(host, "Airport", flight.minusSeconds(500), null, 2, "");
+    long full = store.suggestions(alice).get(0).id();
+    var request = store.request(full, bob);
+    store.decide(request.id(), host, true);
+    var cancelled = store.create(
+      host,
+      "Airport",
+      flight.minusSeconds(400),
+      null,
+      3,
+      ""
+    );
+    store.cancel(cancelled.id(), host);
+    var expired = store.create(
+      host,
+      "Airport",
+      flight.minusSeconds(300),
+      null,
+      3,
+      ""
+    );
+    db.update(
+      "UPDATE rides SET flight_at=? WHERE id=?",
+      java.sql.Timestamp.from(Instant.now().minusSeconds(60)),
+      expired.id()
+    );
+    var departed = store.create(
+      host,
+      "Airport",
+      flight.minusSeconds(200),
+      null,
+      3,
+      ""
+    );
+    db.update(
+      "UPDATE rides SET pickup_at=? WHERE id=?",
+      java.sql.Timestamp.from(Instant.now().minusSeconds(60)),
+      departed.id()
+    );
+    var first = store.create(
+      host,
+      "Airport",
+      flight,
+      null,
+      3,
+      "",
+      Store.KMC_CAMPUS
+    );
+    var second = store.create(
+      host,
+      Store.CAMPUS,
+      flight.plusSeconds(60),
+      null,
+      3,
+      "",
+      "Airport"
+    );
+    var third = store.create(
+      host,
+      "Airport",
+      flight.plusSeconds(60),
+      null,
+      3,
+      ""
+    );
+    store.create(
+      host,
+      Store.KMC_CAMPUS,
+      flight.plusSeconds(120),
+      null,
+      3,
+      "",
+      "Airport"
+    );
+    assertEquals(
+      java.util.List.of(first.id(), second.id(), third.id()),
+      store.suggestions(alice).stream().map(Store.Ride::id).toList()
+    );
+    mvc
+      .perform(get("/api/rides/suggestions"))
+      .andExpect(status().isUnauthorized());
+    long incomplete = store.login("+919000000099").id();
+    mvc
+      .perform(
+        get("/api/rides/suggestions").with(user(String.valueOf(incomplete)))
+      )
+      .andExpect(status().isForbidden());
+    mvc
+      .perform(get("/api/rides/suggestions").with(user(String.valueOf(alice))))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.length()").value(3))
+      .andExpect(jsonPath("$[0].id").value(first.id()))
+      .andExpect(jsonPath("$[1].id").value(second.id()))
+      .andExpect(jsonPath("$[2].id").value(third.id()));
+  }
+
+  @Test
   void schemaAndMatchingWindow() {
     var r = ride(4);
     assertEquals(

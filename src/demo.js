@@ -116,6 +116,20 @@ export function searchRides(
         Math.abs(new Date(b.flightAt) - new Date(flightAt)),
     );
 }
+export function suggestedRides(db, viewer) {
+  const now = new Date();
+  return db.rides
+    .map((r) => rideView(db, r, viewer))
+    .filter(
+      (r) =>
+        r.status === "OPEN" &&
+        new Date(rideDeadline(r)) > now &&
+        new Date(r.flightAt) > now &&
+        r.occupied < r.capacity,
+    )
+    .sort((a, b) => new Date(a.flightAt) - new Date(b.flightAt) || a.id - b.id)
+    .slice(0, 3);
+}
 export function decideRequest(db, id, viewer, accept) {
   const q = db.requests.find((q) => q.id === id);
   if (!q) throw Error("Request not found.");
@@ -231,6 +245,10 @@ export function createDemoApi(
         Object.assign(u, body);
         return u;
       });
+    },
+    suggestions: async () => {
+      complete();
+      return suggestedRides(read(), uid());
     },
     search: async (flight, destination, origin = CAMPUS) => {
       complete();

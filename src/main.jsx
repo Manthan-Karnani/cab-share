@@ -877,6 +877,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     [time, setTime] = useState("12:00"),
     [routeId, setRouteId] = useState(ROUTES[0].id),
     [rides, setRides] = useState([]),
+    [suggestions, setSuggestions] = useState([]),
     [myRides, setMyRides] = useState([]),
     [requests, setRequests] = useState([]),
     [notices, setNotices] = useState([]),
@@ -905,15 +906,18 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     (q) => q.incoming && q.status === "PENDING",
   ).length;
   const unread = notices.filter((n) => !n.read).length;
+  const visibleRides = searched ? rides : suggestions;
   async function refresh() {
-    const [mine, req, not] = await Promise.all([
+    const [mine, req, not, suggested] = await Promise.all([
       api.mine(),
       api.requests(),
       api.notices(),
+      api.suggestions(),
     ]);
     setMyRides(mine.filter((r) => r.status !== "CANCELLED"));
     setRequests(req);
     setNotices(not);
+    setSuggestions(suggested);
   }
   async function search(e) {
     e?.preventDefault();
@@ -926,13 +930,13 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     setSearching(true);
     setError("");
     try {
-      const results = await api.search(
-        query.flightAt,
-        query.destination,
-        query.origin,
-      );
+      const [response] = await Promise.allSettled([
+        api.search(query.flightAt, query.destination, query.origin),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
+      if (response.status === "rejected") throw response.reason;
       if (version !== searchVersion.current) return;
-      setRides(results);
+      setRides(response.value);
       searchRef.current = query;
       setSearched(true);
     } catch (e) {
@@ -977,6 +981,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     window.addEventListener("storage", storage);
     return () => {
       live = false;
+      searchVersion.current++;
       clearInterval(id);
       window.removeEventListener("storage", storage);
     };
@@ -1274,23 +1279,28 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                 <h2>
                   {searched
                     ? "Your possible travel buddies"
-                    : "Let’s find your way home"}
-                  {searched && <span className="count">{rides.length}</span>}
+                    : "Upcoming cab suggestions"}
+                  <span className="count">{visibleRides.length}</span>
                 </h2>
                 <span>
                   {searched
                     ? "Closest flight times first"
-                    : "A shared ride is a search away"}
+                    : "Up to 3 closest flight times · All routes"}
                 </span>
               </div>
               {searching ? (
-                <div className="loading">
+                <div className="loading search-loading" role="status">
                   <LoaderCircle className="spin" />
                   Finding your crew…
                 </div>
-              ) : searched && rides.length ? (
+              ) : !searched && loading ? (
+                <div className="loading search-loading" role="status">
+                  <LoaderCircle className="spin" />
+                  Loading upcoming cabs…
+                </div>
+              ) : visibleRides.length ? (
                 <div className="rides-grid">
-                  {rides.map((r) => (
+                  {visibleRides.map((r) => (
                     <RideCard
                       key={r.id}
                       ride={r}
@@ -1306,13 +1316,13 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                   icon={searched ? CarFront : Plane}
                   title={
                     searched
-                      ? "No cabs around that time. Yet."
-                      : "Your flight. Your people."
+                      ? "Oops, no cab found for your route"
+                      : "Oops, no cab share available at the moment"
                   }
                   text={
                     searched
                       ? "Try another flight time or route, or start a ride and let your crew find you."
-                      : "Tell us when you’re flying. We’ll connect you with students heading the same way."
+                      : "Check back soon, or post a cab to start your own crew."
                   }
                   action={
                     searched ? (

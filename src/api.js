@@ -40,6 +40,7 @@ const real = {
   sendOtp: (phone) => request("/auth/otp", "POST", { phone }),
   verifyOtp: (code) => request("/auth/verify", "POST", { code }),
   profile: (body) => request("/me", "PUT", body),
+  suggestions: () => request("/rides/suggestions"),
   search: (flightAt, destination, origin = CAMPUS) =>
     request(`/rides?${new URLSearchParams({ flightAt, destination, origin })}`),
   create: (body) => request("/rides", "POST", body),
