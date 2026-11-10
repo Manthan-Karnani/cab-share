@@ -932,7 +932,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     try {
       const [response] = await Promise.allSettled([
         api.search(query.flightAt, query.destination, query.origin),
-        new Promise((resolve) => setTimeout(resolve, 2000)),
+        new Promise((resolve) => setTimeout(resolve, 500)),
       ]);
       if (response.status === "rejected") throw response.reason;
       if (version !== searchVersion.current) return;
@@ -1282,21 +1282,23 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                     : "Upcoming cab suggestions"}
                   <span className="count">{visibleRides.length}</span>
                 </h2>
-                <span>
-                  {searched
-                    ? "Closest flight times first"
-                    : "Up to 3 closest flight times · All routes"}
-                </span>
+                {searched && <span>Closest flight times first</span>}
               </div>
               {searching ? (
-                <div className="loading search-loading" role="status">
-                  <LoaderCircle className="spin" />
-                  Finding your crew…
+                <div
+                  className="loading search-loading"
+                  role="status"
+                  aria-label="Finding your crew"
+                >
+                  <LoaderCircle className="spin" size={32} aria-hidden="true" />
                 </div>
               ) : !searched && loading ? (
-                <div className="loading search-loading" role="status">
-                  <LoaderCircle className="spin" />
-                  Loading upcoming cabs…
+                <div
+                  className="loading search-loading"
+                  role="status"
+                  aria-label="Loading upcoming cabs"
+                >
+                  <LoaderCircle className="spin" size={32} aria-hidden="true" />
                 </div>
               ) : visibleRides.length ? (
                 <div className="rides-grid">

@@ -1490,6 +1490,7 @@ textarea {
   line-height: 1.9;
 }
 .search-loading {
+  color: var(--accent);
   min-height: 270px;
   padding: 48px 25px;
   border: 1px dashed var(--border);
