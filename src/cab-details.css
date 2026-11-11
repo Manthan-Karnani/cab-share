@@ -3,6 +3,7 @@
   min-width: 0;
 }
 .cab-details {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -14,6 +15,28 @@
   font-size: 16px;
   line-height: 1.5;
   color: var(--text);
+}
+.cab-details.selectable {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+.cab-details.selectable:hover,
+.cab-details.selectable:focus-within {
+  background: #211c19;
+  border-color: #896049;
+}
+.cab-select {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
 }
 .cab-route {
   display: flex;
@@ -85,6 +108,8 @@
   overflow-wrap: anywhere;
 }
 .cab-host a {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -101,6 +126,10 @@
 .cab-entry > .ride-action .button,
 .cab-entry > .ride-action .text-button {
   font-size: 14px;
+}
+.cab-request-status {
+  font-size: 14px;
+  color: var(--text-muted);
 }
 .request-entry > .request-controls {
   display: flex;

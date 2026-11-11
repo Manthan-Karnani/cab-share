@@ -9,11 +9,14 @@ export function cabAvailability(ride) {
   return { seats, available: active && seats > 0, active };
 }
 
-export default function CabDetails({ ride }) {
+export default function CabDetails({ ride, onSelect }) {
   const { seats, available, active } = cabAvailability(ride);
   const flight = new Date(ride.flightAt);
   return (
-    <article className="cab-details" aria-label="Cab details">
+    <article
+      className={`cab-details${onSelect ? " selectable" : ""}`}
+      aria-label="Cab details"
+    >
       <h3 className="cab-route">
         <span>{ride.origin ?? CAMPUS}</span>
         <ArrowRight size={22} aria-label="to" />
@@ -60,6 +63,15 @@ export default function CabDetails({ ride }) {
           <Phone size={17} aria-hidden="true" /> {ride.creator.phone}
         </a>
       </div>
+      {onSelect && (
+        <button
+          type="button"
+          className="cab-select"
+          aria-label={`Request to join ${ride.creator.name}’s cab from ${ride.origin ?? CAMPUS} to ${ride.destination}`}
+          aria-haspopup="dialog"
+          onClick={onSelect}
+        />
+      )}
     </article>
   );
 }

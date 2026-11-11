@@ -210,11 +210,13 @@ function ErrorText({ message }) {
 }
 function Modal({ title, subtitle, children, onClose }) {
   const ref = useRef();
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     const previous = document.activeElement;
     ref.current?.focus();
     const key = (e) => {
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape") closeRef.current?.();
       if (e.key === "Tab") {
         const els = ref.current.querySelectorAll(
           'button:not(:disabled),input,select,textarea,a[href],[tabindex="0"]',
@@ -710,63 +712,45 @@ function PostForm({ onClose, onCreated, initialRouteId = ROUTES[0].id }) {
     </Modal>
   );
 }
-function RideCard({ ride, user, onJoin, onCancel, busy }) {
+function RideCard({ ride, user, onSelect, onCancel }) {
   const own = ride.creator.id === user.id;
   const status = ride.myRequestStatus;
   const { active, available } = cabAvailability(ride);
-  const inactive = !active;
+  const canJoin = !own && !status && available;
+  const statusLabel =
+    status === "PENDING"
+      ? "Request sent"
+      : status === "ACCEPTED"
+        ? "You’re in!"
+        : status === "REJECTED"
+          ? "Request declined"
+          : status === "CANCELLED"
+            ? "Ride cancelled"
+            : !active
+              ? "Ride unavailable"
+              : !available
+                ? "Cab full"
+                : "";
   return (
     <div className="cab-entry">
-      <CabDetails ride={ride} />
-      <div className="ride-action">
-        {own ? (
-          <>
-            {!inactive && (
-              <button
-                className="text-button danger-text"
-                onClick={() => onCancel(ride)}
-              >
-                Cancel ride
-              </button>
-            )}
-          </>
-        ) : (
-          <Button
-            className={
-              status === "ACCEPTED"
-                ? "accepted"
-                : status
-                  ? "secondary"
-                  : "outline"
-            }
-            busy={busy}
-            disabled={!!status || !available}
-            onClick={() => onJoin(ride.id)}
+      <CabDetails
+        ride={ride}
+        onSelect={canJoin ? () => onSelect(ride) : undefined}
+      />
+      {own && active ? (
+        <div className="ride-action">
+          <button
+            className="text-button danger-text"
+            onClick={() => onCancel(ride)}
           >
-            {status === "PENDING" ? (
-              <>
-                <Clock3 size={16} /> Request sent
-              </>
-            ) : status === "ACCEPTED" ? (
-              <>
-                <Check size={16} /> You’re in!
-              </>
-            ) : status === "REJECTED" ? (
-              "Request declined"
-            ) : status === "CANCELLED" ? (
-              "Ride cancelled"
-            ) : inactive ? (
-              "Ride unavailable"
-            ) : !available ? (
-              "Cab full"
-            ) : (
-              <>
-                Request to join <ArrowUpRight size={17} />
-              </>
-            )}
-          </Button>
-        )}
-      </div>
+            Cancel ride
+          </button>
+        </div>
+      ) : !own && statusLabel ? (
+        <div className="ride-action">
+          <span className="cab-request-status">{statusLabel}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -797,6 +781,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [modal, setModal] = useState(null),
+    [joinError, setJoinError] = useState(""),
     [busy, setBusy] = useState(null),
     [mobileNav, setMobileNav] = useState(false),
     [showNotices, setShowNotices] = useState(false),
@@ -897,12 +882,24 @@ function Dashboard({ user, setUser, onLogout, toast }) {
       window.removeEventListener("storage", storage);
     };
   }, []);
+  function selectRide(ride) {
+    setJoinError("");
+    setModal({ join: ride });
+  }
   async function join(id) {
     setBusy(`join-${id}`);
+    setJoinError("");
     try {
       await api.join(id);
+    } catch (e) {
+      setJoinError(e.message);
+      setBusy(null);
+      return;
+    }
+    setModal(null);
+    toast("Request sent. We’ll let you know when the host responds.");
+    try {
       await Promise.all([refresh(), refreshResults()]);
-      toast("Request sent. We’ll let you know when the host responds.");
     } catch (e) {
       setError(e.message);
     } finally {
@@ -1237,9 +1234,8 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                       key={r.id}
                       ride={r}
                       user={user}
-                      onJoin={join}
+                      onSelect={selectRide}
                       onCancel={(r) => setModal({ cancel: r })}
-                      busy={busy === `join-${r.id}`}
                     />
                   ))}
                 </div>
@@ -1291,7 +1287,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                       key={r.id}
                       ride={r}
                       user={user}
-                      onJoin={join}
+                      onSelect={selectRide}
                       onCancel={(r) => setModal({ cancel: r })}
                     />
                   ))}
@@ -1432,6 +1428,33 @@ function Dashboard({ user, setUser, onLogout, toast }) {
             }
           }}
         />
+      )}
+      {modal?.join && (
+        <Modal
+          title="Request to join this cab?"
+          subtitle={`Send a seat request to ${modal.join.creator.name}. Your seat is confirmed once the host accepts.`}
+          onClose={
+            busy === `join-${modal.join.id}` ? undefined : () => setModal(null)
+          }
+        >
+          <CabDetails ride={modal.join} />
+          <ErrorText message={joinError} />
+          <div className="confirm-actions">
+            <Button
+              className="outline"
+              disabled={busy === `join-${modal.join.id}`}
+              onClick={() => setModal(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              busy={busy === `join-${modal.join.id}`}
+              onClick={() => join(modal.join.id)}
+            >
+              Request to join <ArrowUpRight size={17} />
+            </Button>
+          </div>
+        </Modal>
       )}
       {modal?.cancel && (
         <Modal
