@@ -758,6 +758,12 @@ textarea {
   align-items: center;
   gap: 10px;
 }
+.app-header.find-header {
+  justify-content: flex-end;
+}
+.find-navigation {
+  margin-bottom: 16px;
+}
 .breadcrumb {
   font-size: 11px;
   color: var(--text-muted);

@@ -1064,31 +1064,37 @@ function Dashboard({ user, setUser, onLogout, toast }) {
         <div className="nav-scrim" onClick={() => setMobileNav(false)} />
       )}
       <div className="app-main">
-        <header className="app-header">
-          <div>
-            <button
-              className="icon-button mobile-menu"
-              aria-label="Open navigation"
-              onClick={() => setMobileNav(true)}
-            >
-              <Menu size={22} />
-            </button>
-            <span className="breadcrumb">
-              Your campus <span>/</span>{" "}
-              <strong>
-                {page === "find"
-                  ? "Find a cab"
-                  : page === "rides"
-                    ? "My rides"
-                    : "Requests"}
-              </strong>
-            </span>
-          </div>
+        <header
+          className={`app-header ${page === "find" ? "find-header" : ""}`}
+        >
+          {page !== "find" && (
+            <div>
+              <button
+                className="icon-button mobile-menu"
+                aria-label="Open navigation"
+                onClick={() => setMobileNav(true)}
+              >
+                <Menu size={22} />
+              </button>
+              <span className="breadcrumb">
+                Your campus <span>/</span>{" "}
+                <strong>
+                  {page === "find"
+                    ? "Find a cab"
+                    : page === "rides"
+                      ? "My rides"
+                      : "Requests"}
+                </strong>
+              </span>
+            </div>
+          )}
           <div className="header-right">
-            <span className="local-time">
-              <span className="live-dot" />
-              {DEMO ? "Demo campus" : "Campus connected"}
-            </span>
+            {page !== "find" && (
+              <span className="local-time">
+                <span className="live-dot" />
+                {DEMO ? "Demo campus" : "Campus connected"}
+              </span>
+            )}
             <div className="notifications-wrap">
               <button
                 className="icon-button notification-button"
@@ -1158,7 +1164,11 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                 </>
               )}
             </div>
-            <span className="avatar header-avatar">{initials(user.name)}</span>
+            {page !== "find" && (
+              <span className="avatar header-avatar">
+                {initials(user.name)}
+              </span>
+            )}
           </div>
         </header>
         {DEMO && (
@@ -1173,6 +1183,15 @@ function Dashboard({ user, setUser, onLogout, toast }) {
           </div>
         )}
         <main className="dashboard-content">
+          {page === "find" && (
+            <button
+              className="icon-button mobile-menu find-navigation"
+              aria-label="Open navigation"
+              onClick={() => setMobileNav(true)}
+            >
+              <Menu size={22} />
+            </button>
+          )}
           <div className="page-heading">
             <div>
               {page !== "find" && (
