@@ -32,7 +32,7 @@ import { ROUTES, isToCampus, routeLabel } from "./routes";
 import CursorGlow from "./CursorGlow";
 import NightDrive from "./NightDrive";
 import "./styles.css";
-import CabDetails, { cabAvailability } from "./CabDetails";
+import CabDetails, { cabAvailability, RequestCabDetails } from "./CabDetails";
 const dateLabel = (s) =>
   new Date(s).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 const timeLabel = (s) =>
@@ -1332,7 +1332,10 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                     .filter((q) => q.incoming === (requestTab === "incoming"))
                     .map((q) => (
                       <div className="request-entry" key={q.id}>
-                        <CabDetails ride={q.ride} />
+                        <RequestCabDetails
+                          request={q}
+                          knownRides={[...myRides, ...suggestions, ...rides]}
+                        />
                         <div className="request-controls">
                           <div className="request-info">
                             <strong>
