@@ -6,9 +6,7 @@ import {
   ArrowLeft,
   CarFront,
   Plane,
-  Users,
   Phone,
-  MapPin,
   CalendarDays,
   Clock3,
   Check,
@@ -22,7 +20,6 @@ import {
   X,
   Menu,
   LoaderCircle,
-  ChevronDown,
   Leaf,
   Copy,
   Info,
@@ -31,10 +28,11 @@ import {
 } from "lucide-react";
 import { api, DEMO } from "./api";
 import { tomorrow, localInstant } from "./demo";
-import { ROUTES, isToCampus, routeLabel, rideDeadline } from "./routes";
+import { ROUTES, isToCampus, routeLabel } from "./routes";
 import CursorGlow from "./CursorGlow";
 import NightDrive from "./NightDrive";
 import "./styles.css";
+import CabDetails, { cabAvailability } from "./CabDetails";
 const dateLabel = (s) =>
   new Date(s).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 const timeLabel = (s) =>
@@ -713,105 +711,16 @@ function PostForm({ onClose, onCreated, initialRouteId = ROUTES[0].id }) {
   );
 }
 function RideCard({ ride, user, onJoin, onCancel, busy }) {
-  const [expanded, setExpanded] = useState(false);
-  const toCampus = isToCampus(ride);
   const own = ride.creator.id === user.id;
   const status = ride.myRequestStatus;
-  const inactive =
-    ride.status !== "OPEN" || new Date(rideDeadline(ride)) <= new Date();
+  const { active, available } = cabAvailability(ride);
+  const inactive = !active;
   return (
-    <article className={`ride-card ${inactive ? "inactive" : ""}`}>
-      <div className="ride-top">
-        <span className="route-tag" title={routeLabel(ride)}>
-          <Plane size={13} />
-          <span>{routeLabel(ride)}</span>
-        </span>
-        <span className={`seat-tag ${inactive ? "neutral" : ""}`}>
-          <span className="live-dot" />
-          {ride.status === "CANCELLED"
-            ? "Cancelled"
-            : inactive
-              ? "Completed"
-              : `${ride.capacity - ride.occupied} seat${ride.capacity - ride.occupied !== 1 ? "s" : ""} available`}
-        </span>
-      </div>
-      <div className="ride-time">
-        <div>
-          <span className="micro-label">
-            {toCampus ? "FLIGHT ARRIVAL" : "FLIGHT DEPARTURE"}
-          </span>
-          <h3>
-            {timeLabel(ride.flightAt)}
-            <span>{dateLabel(ride.flightAt)}</span>
-          </h3>
-        </div>
-        <Plane className="flight-icon" size={25} strokeWidth={1.5} />
-      </div>
-      {ride.pickupAt && (
-        <div className="pickup">
-          <MapPin size={15} />
-          <span>{toCampus ? "Airport pickup" : "Campus pickup"}</span>
-          <strong>
-            {timeLabel(ride.pickupAt)} · {dateLabel(ride.pickupAt)}
-          </strong>
-        </div>
-      )}
-      <div className="ride-host">
-        <span className={`avatar color-${ride.creator.id % 4}`}>
-          {initials(ride.creator.name)}
-        </span>
-        <div>
-          <strong>
-            {ride.creator.name}
-            {own ? " (you)" : ""}
-          </strong>
-          <span>{ride.creator.blockNumber}</span>
-        </div>
-        <a
-          className="icon-button call"
-          href={`tel:${ride.creator.phone}`}
-          aria-label={`Call ${ride.creator.name}`}
-        >
-          <Phone size={17} />
-        </a>
-      </div>
-      <div className="ride-note">
-        {ride.notes ||
-          "A shared ride, a lighter fare. Get in touch to plan the details."}
-      </div>
-      <button
-        className="passengers"
-        onClick={() => setExpanded(!expanded)}
-        aria-expanded={expanded}
-      >
-        <Users size={16} />
-        <span>
-          <strong>
-            {ride.occupied}/{ride.capacity}
-          </strong>{" "}
-          people in this cab
-        </span>
-        <ChevronDown size={16} className={expanded ? "rotate" : ""} />
-      </button>
-      {expanded && (
-        <div className="member-list">
-          {ride.members.map((m) => (
-            <div key={m.id}>
-              <span>
-                {m.name}
-                <small>{m.blockNumber}</small>
-              </span>
-              <a href={`tel:${m.phone}`}>{m.phone}</a>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="cab-entry">
+      <CabDetails ride={ride} />
       <div className="ride-action">
         {own ? (
           <>
-            <span className="your-cab">
-              <CheckCircle2 size={15} /> Your cab
-            </span>
             {!inactive && (
               <button
                 className="text-button danger-text"
@@ -831,7 +740,7 @@ function RideCard({ ride, user, onJoin, onCancel, busy }) {
                   : "outline"
             }
             busy={busy}
-            disabled={!!status || inactive}
+            disabled={!!status || !available}
             onClick={() => onJoin(ride.id)}
           >
             {status === "PENDING" ? (
@@ -848,6 +757,8 @@ function RideCard({ ride, user, onJoin, onCancel, busy }) {
               "Ride cancelled"
             ) : inactive ? (
               "Ride unavailable"
+            ) : !available ? (
+              "Cab full"
             ) : (
               <>
                 Request to join <ArrowUpRight size={17} />
@@ -856,7 +767,7 @@ function RideCard({ ride, user, onJoin, onCancel, busy }) {
           </Button>
         )}
       </div>
-    </article>
+    </div>
   );
 }
 function Empty({ icon: Icon = Search, title, text, action }) {
@@ -1424,57 +1335,46 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                   {requests
                     .filter((q) => q.incoming === (requestTab === "incoming"))
                     .map((q) => (
-                      <article className="request-card" key={q.id}>
-                        <span className="avatar">
-                          {initials(q.student.name)}
-                        </span>
-                        <div className="request-info">
-                          <strong>
-                            {q.incoming
-                              ? q.student.name
-                              : `Your request: ${routeLabel(q)}`}
-                          </strong>
-                          <span>
-                            {q.incoming
-                              ? `${q.student.blockNumber} · ${q.student.phone}`
-                              : "Waiting for a great shared journey."}
-                          </span>
-                          <p>
-                            <Plane size={14} /> {routeLabel(q)} <span>·</span>{" "}
-                            {isToCampus(q) ? "Arrival" : "Departure"}{" "}
-                            {dateLabel(q.flightAt)}, {timeLabel(q.flightAt)}
-                          </p>
-                        </div>
-                        {q.incoming && q.status === "PENDING" ? (
-                          <div className="request-actions">
-                            <Button
-                              className="outline"
-                              busy={busy === `request-${q.id}`}
-                              onClick={() => decide(q.id, false)}
-                            >
-                              Decline
-                            </Button>
-                            <Button
-                              busy={busy === `request-${q.id}`}
-                              onClick={() => decide(q.id, true)}
-                            >
-                              <Check size={16} /> Accept
-                            </Button>
+                      <div className="request-entry" key={q.id}>
+                        <CabDetails ride={q.ride} />
+                        <div className="request-controls">
+                          <div className="request-info">
+                            <strong>
+                              {q.incoming ? q.student.name : "Your request"}
+                            </strong>
+                            {q.incoming && <span>{q.student.phone}</span>}
                           </div>
-                        ) : (
-                          <span
-                            className={`status-badge ${q.status.toLowerCase()}`}
-                          >
-                            {q.status === "PENDING"
-                              ? "Awaiting response"
-                              : q.status === "ACCEPTED"
-                                ? "Accepted"
-                                : q.status === "REJECTED"
-                                  ? "Declined"
-                                  : "Cancelled"}
-                          </span>
-                        )}
-                      </article>
+                          {q.incoming && q.status === "PENDING" ? (
+                            <div className="request-actions">
+                              <Button
+                                className="outline"
+                                busy={busy === `request-${q.id}`}
+                                onClick={() => decide(q.id, false)}
+                              >
+                                Decline
+                              </Button>
+                              <Button
+                                busy={busy === `request-${q.id}`}
+                                onClick={() => decide(q.id, true)}
+                              >
+                                <Check size={16} /> Accept
+                              </Button>
+                            </div>
+                          ) : (
+                            <span
+                              className={`status-badge ${q.status.toLowerCase()}`}
+                            >
+                              {q.status === "PENDING"
+                                ? "Awaiting response"
+                                : q.status === "ACCEPTED"
+                                  ? "Accepted"
+                                  : q.status === "REJECTED"
+                                    ? "Declined"
+                                    : "Cancelled"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     ))}
                 </div>
               ) : (

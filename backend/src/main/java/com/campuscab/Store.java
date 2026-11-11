@@ -70,7 +70,8 @@ class Store {
     String origin,
     Instant flightAt,
     Instant pickupAt,
-    boolean incoming
+    boolean incoming,
+    Ride ride
   ) {}
 
   record Notice(
@@ -373,7 +374,8 @@ class Store {
       r.origin(),
       r.flightAt(),
       r.pickupAt(),
-      false
+      false,
+      ride(id, viewer)
     );
   }
 
@@ -391,7 +393,8 @@ class Store {
           r.getString("origin"),
           r.getTimestamp("flight_at").toInstant(),
           instant(r.getTimestamp("pickup_at")),
-          r.getLong("creator_id") == viewer
+          r.getLong("creator_id") == viewer,
+          ride(r.getLong("ride_id"), viewer)
         ),
       viewer,
       viewer

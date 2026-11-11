@@ -1,0 +1,135 @@
+.cab-entry,
+.request-entry {
+  min-width: 0;
+}
+.cab-details {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  font-family: "DM Sans", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.cab-route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.cab-route svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.cab-seats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.cab-seats svg {
+  flex-shrink: 0;
+}
+.cab-seats.available {
+  color: #73e5a0;
+}
+.cab-seats.unavailable {
+  color: #ff9292;
+}
+.cab-flight {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-base);
+}
+.cab-flight > div,
+.cab-host {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.cab-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.cab-label svg {
+  flex-shrink: 0;
+}
+.cab-flight time {
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cab-host strong {
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.cab-host a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  text-underline-offset: 4px;
+}
+.cab-host a:hover {
+  text-decoration: underline;
+}
+.cab-entry > .ride-action {
+  padding: 12px 4px 0;
+  justify-content: flex-end;
+}
+.cab-entry > .ride-action .button,
+.cab-entry > .ride-action .text-button {
+  font-size: 14px;
+}
+.request-entry > .request-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 4px;
+}
+.request-controls .request-info > strong {
+  font-size: 15px;
+}
+.request-controls .request-info > span {
+  font-size: 14px;
+}
+.request-controls .request-actions .button {
+  font-size: 14px;
+}
+.request-entry + .request-entry {
+  margin-top: 12px;
+}
+@media (max-width: 400px) {
+  .cab-details {
+    padding: 18px;
+  }
+  .cab-flight {
+    gap: 12px;
+    padding: 12px;
+  }
+  .cab-label {
+    flex-wrap: wrap;
+  }
+}

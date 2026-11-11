@@ -204,6 +204,7 @@ export function createDemoApi(
       flightAt: r.flightAt,
       pickupAt: r.pickupAt,
       incoming: r.creatorId === uid(),
+      ride: rideView(d, r, uid()),
     };
   };
   return {

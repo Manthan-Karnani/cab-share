@@ -183,7 +183,7 @@ class CampusCabIntegrationTest {
   }
 
   @Test
-  void approvalAndNotification() {
+  void approvalAndNotification() throws Exception {
     var r = ride(3);
     var q = store.request(r.id(), alice);
     assertEquals(1, store.ride(r.id(), host).occupied());
@@ -193,6 +193,14 @@ class CampusCabIntegrationTest {
     assertEquals("ACCEPTED", store.requests(alice).get(0).status());
     assertTrue(store.notices(alice).get(0).message().contains("accepted"));
     assertEquals(1, store.mine(alice).size());
+    mvc
+      .perform(get("/api/requests").with(user(String.valueOf(alice))))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$[0].ride.id").value(r.id()))
+      .andExpect(jsonPath("$[0].ride.creator.name").value("Host"))
+      .andExpect(jsonPath("$[0].ride.creator.phone").value("+919000000001"))
+      .andExpect(jsonPath("$[0].ride.capacity").value(3))
+      .andExpect(jsonPath("$[0].ride.occupied").value(2));
   }
 
   @Test

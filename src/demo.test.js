@@ -287,7 +287,11 @@ test("phone login, profile requirement, request, approval, and notification acro
   await api.logout();
   await api.sendOtp("+919999999999");
   await api.verifyOtp("123456");
-  assert.equal((await api.requests())[0].status, "ACCEPTED");
+  const accepted = (await api.requests())[0];
+  assert.equal(accepted.status, "ACCEPTED");
+  assert.equal(accepted.ride.creator.phone, "+919000000101");
+  assert.equal(accepted.ride.capacity, 4);
+  assert.equal(accepted.ride.occupied, 3);
   assert.match((await api.notices())[0].message, /accepted/);
   assert.equal((await api.mine())[0].occupied, 3);
 });
