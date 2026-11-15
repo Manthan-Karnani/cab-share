@@ -17,10 +17,19 @@
   flex-direction: column;
   gap: 20px;
 }
+.pooling-suggestions {
+  margin-top: 20px;
+}
+.pooling-suggestions .cab-details {
+  gap: 16px;
+  padding: 20px;
+}
 .pooling-actions {
   align-items: center;
   gap: 14px;
   margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
 }
 .cab-details {
   position: relative;

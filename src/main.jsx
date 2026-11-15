@@ -274,7 +274,7 @@ function Modal({ title, subtitle, children, onClose }) {
           <CarFront size={25} />
         </div>
         <h2>{title}</h2>
-        <p className="muted">{subtitle}</p>
+        {subtitle && <p className="muted">{subtitle}</p>}
         {children}
       </section>
     </div>
@@ -655,7 +655,6 @@ function PostForm({
       <Modal
         key="pooling"
         title="Pool in an existing cab?"
-        subtitle="These cabs follow your route with flight times within one hour before or after yours. Request a seat here; the host will confirm it."
         onClose={busy ? undefined : onClose}
       >
         <div className="pooling-suggestions">
