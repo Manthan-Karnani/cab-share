@@ -61,6 +61,8 @@ Open the URL Vite prints (normally **http://127.0.0.1:5173**). Vite loads the fr
 
 On Find a cab and Post a cab, choose MIT Manipal campus or KMC Manipal campus in either direction to/from the airport. The airport endpoint is fixed to `Airport`. Posting also requires selecting capacity (2–8, including you) and a future flight departure/arrival date and time; the note is optional. There is no separate pickup-time field. New rides remain available until their flight time. Existing rides retain any previously supplied pickup time and use that as their availability cutoff. Restart the backend after updating: Flyway adds the `origin` column and makes `pickup_at` optional automatically, preserving existing rides.
 
+When you select **Post my cab**, the app first checks for available cabs on the same route with flight times within **one hour before or after yours**, inclusive. Matching cabs show their usual details and a **Request to join** button. Requesting a seat sends the normal host-approval request without posting your draft. Choose **No, post my cab** to create your own cab, or **Back to edit** to change the saved details and check again. If no eligible cab matches, your cab is posted immediately. Your own cabs and cabs you have already requested are excluded. A failed check keeps the form open for retry. This works with both the Java API and browser demo.
+
 ## Browser-only demo
 
 ```sh
@@ -82,7 +84,7 @@ Seed host numbers: Ananya `+919000000101`, Arjun `+919000000102`, Riya `+9190000
 
 - E.164 phone login with Twilio Verify integration; five-minute challenge expiry, attempt limits and resend cooldown.
 - Mandatory name and block profile; immutable verified phone number.
-- Posting with four fixed routes, mandatory capacity (2–8, including the host), mandatory flight departure/arrival date and time, and optional notes.
+- Posting with four fixed routes, mandatory capacity (2–8, including the host), mandatory flight departure/arrival date and time, optional notes, and matching cab suggestions before creating a new cab.
 - Inclusive ±60-minute matching on both route endpoints and flight departure/arrival time, available seats, host contact, and expandable passenger contacts for authenticated students with complete profiles.
 - Incoming and outgoing requests; only the host can accept/reject. Duplicate/self requests are blocked.
 - Transactional seat limits: requests and decisions lock the ride. READ COMMITTED isolation prevents stale capacity reads after waiting for the lock, including on MySQL.
@@ -111,7 +113,7 @@ cd backend
 mvn test
 ```
 
-The 9 frontend tests cover matching boundaries in both directions, route isolation between MIT and KMC in both directions, return-ride creation and requests, compatibility with existing demo rides, capacity/ownership, simplified posting without pickup time or notes, cancellation removal after reload, and the cross-account request-to-notification flow. The 14 backend integration tests use **H2 in MySQL compatibility mode**, applying the actual Flyway migrations. They cover login/session persistence, profile gating, CSRF/authentication, matching boundaries, route isolation between MIT and KMC in both directions, KMC route API persistence and requests, return-ride API persistence, legacy pickup validation, required capacity and future flight times, posting/joining/approval/expiry without pickup time, duplicates/ownership, rejection, cancellation removal from ride lists, and competing approvals for the last seat. Java compilation, all tests, and the frontend production build pass. Real MySQL runtime validation remains to be done.
+The 15 frontend tests cover matching boundaries in both directions, route isolation between MIT and KMC in both directions, return-ride creation and requests, compatibility with existing demo rides, capacity/ownership, simplified posting without pickup time or notes, cancellation removal after reload, and the cross-account request-to-notification flow. Posting checks also cover suggestions across midnight, requesting a suggested cab without creating a new one, declining and posting the saved draft, excluding ineligible cabs, and failed searches or invalid times preventing creation. The 15 backend integration tests use **H2 in MySQL compatibility mode**, applying the actual Flyway migrations. They cover login/session persistence, profile gating, CSRF/authentication, matching boundaries, route isolation between MIT and KMC in both directions, KMC route API persistence and requests, return-ride API persistence, legacy pickup validation, required capacity and future flight times, posting/joining/approval/expiry without pickup time, duplicates/ownership, rejection, cancellation removal from ride lists, and competing approvals for the last seat. Java compilation, all tests, and the frontend production build pass. Real MySQL runtime validation remains to be done.
 
 ## Structure
 

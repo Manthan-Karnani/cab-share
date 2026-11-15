@@ -29,6 +29,7 @@ import {
 import { api, DEMO } from "./api";
 import { tomorrow, localInstant } from "./demo";
 import { ROUTES, isToCampus, routeLabel } from "./routes";
+import { prepareCabPost } from "./posting";
 import CursorGlow from "./CursorGlow";
 import NightDrive from "./NightDrive";
 import "./styles.css";
@@ -617,97 +618,181 @@ function RouteDirection({ value, onChange }) {
     </Field>
   );
 }
-function PostForm({ onClose, onCreated, initialRouteId = ROUTES[0].id }) {
+function PostForm({
+  user,
+  onClose,
+  onCreated,
+  onRequested,
+  initialRouteId = ROUTES[0].id,
+}) {
   const [routeId, setRouteId] = useState(initialRouteId),
     [date, setDate] = useState(tomorrow()),
     [time, setTime] = useState("12:00"),
     [capacity, setCapacity] = useState(""),
     [notes, setNotes] = useState(""),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(null),
+    [pooling, setPooling] = useState(null);
+  const actionRef = useRef(false);
   const route = ROUTES.find((route) => route.id === routeId);
   const toCampus = isToCampus(route);
+  async function runAction(action, work) {
+    if (actionRef.current) return;
+    actionRef.current = true;
+    setBusy(action);
+    setError("");
+    try {
+      await work();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      actionRef.current = false;
+      setBusy(null);
+    }
+  }
+  if (pooling) {
+    return (
+      <Modal
+        key="pooling"
+        title="Pool in an existing cab?"
+        subtitle="These cabs follow your route with flight times within one hour before or after yours. Request a seat here; the host will confirm it."
+        onClose={busy ? undefined : onClose}
+      >
+        <div className="pooling-suggestions">
+          {pooling.matches.map((ride) => (
+            <div className="cab-entry" key={ride.id}>
+              <CabDetails ride={ride} />
+              <div className="ride-action">
+                <Button
+                  busy={busy === `join-${ride.id}`}
+                  disabled={!!busy}
+                  aria-label={`Request to join ${ride.creator.name}’s cab`}
+                  onClick={() =>
+                    runAction(`join-${ride.id}`, async () => {
+                      await api.join(ride.id);
+                      onRequested();
+                    })
+                  }
+                >
+                  Request to join <ArrowUpRight size={17} />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <ErrorText message={error} />
+        <div className="pooling-actions">
+          <Button
+            className="outline full"
+            busy={busy === "post"}
+            disabled={!!busy}
+            onClick={() =>
+              runAction("post", async () => {
+                await api.create(pooling.draft);
+                onCreated();
+              })
+            }
+          >
+            No, post my cab <Plus size={18} />
+          </Button>
+          <button
+            type="button"
+            className="text-button"
+            disabled={!!busy}
+            onClick={() => {
+              setPooling(null);
+              setError("");
+            }}
+          >
+            Back to edit
+          </button>
+        </div>
+      </Modal>
+    );
+  }
   return (
     <Modal
+      key="post"
       title="Make room for company."
       subtitle="Post your airport cab. You’ll approve each person before they join."
-      onClose={onClose}
+      onClose={busy ? undefined : onClose}
     >
       <form
         className="stack-form"
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
-          setBusy(true);
-          setError("");
-          try {
-            await api.create({
+          runAction("check", async () => {
+            const draft = {
               origin: route.origin,
               destination: route.destination,
               flightAt: localInstant(date, time),
               capacity: Number(capacity),
               notes,
-            });
-            onCreated();
-          } catch (e) {
-            setError(e.message);
-          } finally {
-            setBusy(false);
-          }
+            };
+            const result = await prepareCabPost(api, user.id, draft);
+            if (result.matches) {
+              setPooling({ draft, matches: result.matches });
+            } else {
+              onCreated();
+            }
+          });
         }}
       >
-        <RouteDirection value={routeId} onChange={setRouteId} />
-        <Field label="Cab capacity (including you) — required">
-          <select
-            required
-            value={capacity}
-            onChange={(e) => setCapacity(e.target.value)}
-          >
-            <option value="" disabled>
-              Select capacity
-            </option>
-            {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-              <option key={n} value={n}>
-                {n} people
+        <fieldset className="post-fields" disabled={!!busy}>
+          <RouteDirection value={routeId} onChange={setRouteId} />
+          <Field label="Cab capacity (including you) — required">
+            <select
+              required
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value)}
+            >
+              <option value="" disabled>
+                Select capacity
               </option>
-            ))}
-          </select>
-        </Field>
-        <div className="form-row">
-          <Field
-            label={toCampus ? "Flight arrival date" : "Flight departure date"}
-          >
-            <input
-              type="date"
-              required
-              min={new Date().toLocaleDateString("en-CA")}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              {[2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <option key={n} value={n}>
+                  {n} people
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="form-row">
+            <Field
+              label={toCampus ? "Flight arrival date" : "Flight departure date"}
+            >
+              <input
+                type="date"
+                required
+                min={new Date().toLocaleDateString("en-CA")}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </Field>
+            <Field
+              label={toCampus ? "Flight arrival time" : "Flight departure time"}
+            >
+              <input
+                type="time"
+                required
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
+            </Field>
+          </div>
+          <Field label="A note for your crew (optional)">
+            <textarea
+              maxLength={300}
+              rows={2}
+              placeholder="Meeting point, luggage space, or anything helpful…"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </Field>
-          <Field
-            label={toCampus ? "Flight arrival time" : "Flight departure time"}
-          >
-            <input
-              type="time"
-              required
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-            />
-          </Field>
-        </div>
-        <Field label="A note for your crew (optional)">
-          <textarea
-            maxLength={300}
-            rows={2}
-            placeholder="Meeting point, luggage space, or anything helpful…"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </Field>
-        <ErrorText message={error} />
-        <Button busy={busy} className="full" type="submit">
-          Post my cab <Plus size={18} />
-        </Button>
+          <ErrorText message={error} />
+          <Button busy={busy} className="full" type="submit">
+            {busy ? "Checking for cabs…" : "Post my cab"} <Plus size={18} />
+          </Button>
+        </fieldset>
       </form>
     </Modal>
   );
@@ -1418,8 +1503,18 @@ function Dashboard({ user, setUser, onLogout, toast }) {
       )}
       {modal === "post" && (
         <PostForm
+          user={user}
           initialRouteId={routeId}
           onClose={() => setModal(null)}
+          onRequested={async () => {
+            setModal(null);
+            toast("Request sent. We’ll let you know when the host responds.");
+            try {
+              await Promise.all([refresh(), refreshResults()]);
+            } catch (e) {
+              setError(e.message);
+            }
+          }}
           onCreated={async () => {
             setModal(null);
             go("rides");
