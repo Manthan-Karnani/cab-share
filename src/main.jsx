@@ -30,7 +30,7 @@ import { api, DEMO } from "./api";
 import { tomorrow, localInstant } from "./demo";
 import { ROUTES, isToCampus, routeLabel } from "./routes";
 import { prepareCabPost } from "./posting";
-import CursorGlow from "./CursorGlow";
+import CursorCab from "./CursorCab";
 import NightDrive from "./NightDrive";
 import "./styles.css";
 import CabDetails, { cabAvailability, RequestCabDetails } from "./CabDetails";
@@ -1660,7 +1660,7 @@ function App() {
     );
   return (
     <>
-      {!user && <CursorGlow />}
+      {!user && <CursorCab />}
       {!user ? (
         <Landing onLogin={setUser} />
       ) : !complete(user) ? (
