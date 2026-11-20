@@ -1362,36 +1362,7 @@ textarea {
   margin-top: 20px;
   font-size: 11px;
 }
-.dashboard-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  border-top: 1px solid var(--border);
-  padding: 18px 0;
-  color: var(--text-muted);
-  font-size: 8px;
-  margin-top: auto;
-}
-.dashboard-content > .rides-grid + .dashboard-footer,
-.dashboard-content > .empty + .dashboard-footer,
-.dashboard-content > .request-list + .dashboard-footer {
-  margin-top: 50px;
-}
-.dashboard-footer > span:first-child {
-  color: var(--text-muted);
-  font-weight: 600;
-}
-.dashboard-footer > span:first-child > span {
-  font-weight: 400;
-  color: var(--text-muted);
-  margin-left: 7px;
-}
-.dashboard-footer > span:last-child {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+
 .tabs {
   display: flex;
   gap: 22px;
@@ -1752,9 +1723,7 @@ textarea {
   .request-actions {
     margin-left: auto;
   }
-  .dashboard-footer > span:last-child {
-    font-size: 7px;
-  }
+
   .local-time {
     font-size: 9px;
   }
@@ -2024,16 +1993,7 @@ textarea {
   .member-list small {
     font-size: 9px;
   }
-  .dashboard-footer {
-    margin-top: 32px !important;
-    padding: 17px 0;
-    font-size: 8px;
-    gap: 8px;
-  }
-  .dashboard-footer > span:last-child {
-    font-size: 7px;
-    max-width: 135px;
-  }
+
   .empty {
     padding: 38px 20px;
   }

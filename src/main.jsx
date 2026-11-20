@@ -20,7 +20,6 @@ import {
   X,
   Menu,
   LoaderCircle,
-  Leaf,
   Copy,
   Info,
   Inbox,
@@ -845,7 +844,7 @@ function Empty({ icon: Icon = Search, title, text, action }) {
         <Icon size={30} strokeWidth={1.5} />
       </span>
       <h3>{title}</h3>
-      <p>{text}</p>
+      {text && <p>{text}</p>}
       {action}
     </div>
   );
@@ -868,8 +867,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     [joinError, setJoinError] = useState(""),
     [busy, setBusy] = useState(null),
     [mobileNav, setMobileNav] = useState(false),
-    [showNotices, setShowNotices] = useState(false),
-    [requestTab, setRequestTab] = useState("incoming");
+    [showNotices, setShowNotices] = useState(false);
   const route = ROUTES.find((route) => route.id === routeId);
   const toCampus = isToCampus(route);
   const searchRef = useRef(null);
@@ -882,11 +880,13 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     setSearching(false);
     setRides([]);
   }
-  const pending = requests.filter(
+  const pendingRequests = requests.filter(
     (q) => q.incoming && q.status === "PENDING",
-  ).length;
+  );
+  const pending = pendingRequests.length;
   const unread = notices.filter((n) => !n.read).length;
   const visibleRides = searched ? rides : suggestions;
+  const cleanHeader = true;
   async function refresh() {
     const [mine, req, not, suggested] = await Promise.all([
       api.mine(),
@@ -994,6 +994,11 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     setBusy(`request-${id}`);
     try {
       await api.decide(id, accept);
+      setRequests((prev) =>
+        prev.map((q) =>
+          q.id === id ? { ...q, status: accept ? "ACCEPTED" : "REJECTED" } : q,
+        ),
+      );
       await Promise.all([refresh(), refreshResults()]);
       toast(
         accept
@@ -1057,9 +1062,9 @@ function Dashboard({ user, setUser, onLogout, toast }) {
       )}
       <div className="app-main">
         <header
-          className={`app-header ${page === "find" ? "find-header" : ""}`}
+          className={`app-header ${cleanHeader ? "find-header" : ""}`}
         >
-          {page !== "find" && (
+          {!cleanHeader && (
             <div>
               <button
                 className="icon-button mobile-menu"
@@ -1081,7 +1086,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
             </div>
           )}
           <div className="header-right">
-            {page !== "find" && (
+            {!cleanHeader && (
               <span className="local-time">
                 <span className="live-dot" />
                 {DEMO ? "Demo campus" : "Campus connected"}
@@ -1156,7 +1161,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                 </>
               )}
             </div>
-            {page !== "find" && (
+            {!cleanHeader && (
               <span className="avatar header-avatar">
                 {initials(user.name)}
               </span>
@@ -1175,7 +1180,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
           </div>
         )}
         <main className="dashboard-content">
-          {page === "find" && (
+          {cleanHeader && (
             <button
               className="icon-button mobile-menu find-navigation"
               aria-label="Open navigation"
@@ -1186,35 +1191,17 @@ function Dashboard({ user, setUser, onLogout, toast }) {
           )}
           <div className="page-heading">
             <div>
-              {page !== "find" && (
-                <p className="eyebrow">
-                  {page === "rides"
-                    ? "YOUR JOURNEYS, TOGETHER"
-                    : "A LITTLE MORE COMPANY"}
-                </p>
-              )}
               <h1>
                 {page === "find" ? (
                   <>
                     Find your <em>airport crew.</em>
                   </>
                 ) : page === "rides" ? (
-                  <>
-                    Your rides. <em>All in one place.</em>
-                  </>
+                  "Your rides"
                 ) : (
-                  <>
-                    Good journeys <em>start here.</em>
-                  </>
+                  "Requests"
                 )}
               </h1>
-              {page !== "find" && (
-                <p>
-                  {page === "rides"
-                    ? "Cabs you’re hosting and rides you’ve joined."
-                    : "Manage your incoming requests and keep track of the ones you’ve sent."}
-                </p>
-              )}
             </div>
             <Button onClick={() => setModal("post")}>
               <Plus size={18} /> Post a cab
@@ -1357,7 +1344,6 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                   Your travel plans{" "}
                   <span className="count">{myRides.length}</span>
                 </h2>
-                <span>Created by you or confirmed by your host</span>
               </div>
               {loading ? (
                 <div className="loading">
@@ -1392,101 +1378,49 @@ function Dashboard({ user, setUser, onLogout, toast }) {
           )}
           {page === "requests" && (
             <>
-              <div className="tabs">
-                <button
-                  className={requestTab === "incoming" ? "active" : ""}
-                  onClick={() => setRequestTab("incoming")}
-                >
-                  Incoming{" "}
-                  <span>{requests.filter((q) => q.incoming).length}</span>
-                </button>
-                <button
-                  className={requestTab === "outgoing" ? "active" : ""}
-                  onClick={() => setRequestTab("outgoing")}
-                >
-                  Sent by you{" "}
-                  <span>{requests.filter((q) => !q.incoming).length}</span>
-                </button>
-              </div>
-              {requests.filter(
-                (q) => q.incoming === (requestTab === "incoming"),
-              ).length ? (
+              {loading ? (
+                <div className="loading">
+                  <LoaderCircle className="spin" />
+                  Loading requests…
+                </div>
+              ) : pendingRequests.length ? (
                 <div className="request-list">
-                  {requests
-                    .filter((q) => q.incoming === (requestTab === "incoming"))
-                    .map((q) => (
-                      <div className="request-entry" key={q.id}>
-                        <RequestCabDetails
-                          request={q}
-                          knownRides={[...myRides, ...suggestions, ...rides]}
-                        />
-                        <div className="request-controls">
-                          <div className="request-info">
-                            <strong>
-                              {q.incoming ? q.student.name : "Your request"}
-                            </strong>
-                            {q.incoming && <span>{q.student.phone}</span>}
-                          </div>
-                          {q.incoming && q.status === "PENDING" ? (
-                            <div className="request-actions">
-                              <Button
-                                className="outline"
-                                busy={busy === `request-${q.id}`}
-                                onClick={() => decide(q.id, false)}
-                              >
-                                Decline
-                              </Button>
-                              <Button
-                                busy={busy === `request-${q.id}`}
-                                onClick={() => decide(q.id, true)}
-                              >
-                                <Check size={16} /> Accept
-                              </Button>
-                            </div>
-                          ) : (
-                            <span
-                              className={`status-badge ${q.status.toLowerCase()}`}
-                            >
-                              {q.status === "PENDING"
-                                ? "Awaiting response"
-                                : q.status === "ACCEPTED"
-                                  ? "Accepted"
-                                  : q.status === "REJECTED"
-                                    ? "Declined"
-                                    : "Cancelled"}
-                            </span>
-                          )}
+                  {pendingRequests.map((q) => (
+                    <div className="request-entry" key={q.id}>
+                      <RequestCabDetails
+                        request={q}
+                        knownRides={[...myRides, ...suggestions, ...rides]}
+                      />
+                      <div className="request-controls">
+                        <div className="request-info">
+                          <strong>{q.student.name}</strong>
+                          {q.student.phone && <span>{q.student.phone}</span>}
+                        </div>
+                        <div className="request-actions">
+                          <Button
+                            className="outline"
+                            busy={busy === `request-${q.id}`}
+                            onClick={() => decide(q.id, false)}
+                          >
+                            Decline
+                          </Button>
+                          <Button
+                            busy={busy === `request-${q.id}`}
+                            onClick={() => decide(q.id, true)}
+                          >
+                            <Check size={16} /> Accept
+                          </Button>
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <Empty
-                  icon={Inbox}
-                  title={
-                    requestTab === "incoming"
-                      ? "Your crew hasn’t knocked. Yet."
-                      : "No requests sent just yet."
-                  }
-                  text={
-                    requestTab === "incoming"
-                      ? "When someone wants to join a cab you posted, you can accept or decline them here."
-                      : "Find a cab that fits your flight and request a seat. You’ll see its status here."
-                  }
-                />
+                <Empty icon={Inbox} title="No requests yet" />
               )}
             </>
           )}
-          {page !== "find" && (
-            <footer className="dashboard-footer">
-              <span>
-                campuscab. <span>Better, together.</span>
-              </span>
-              <span>
-                <Leaf size={13} /> Share the ride. Lighten the footprint.
-              </span>
-            </footer>
-          )}
+
         </main>
       </div>
       {modal === "profile" && (
