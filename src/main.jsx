@@ -867,7 +867,8 @@ function Dashboard({ user, setUser, onLogout, toast }) {
     [joinError, setJoinError] = useState(""),
     [busy, setBusy] = useState(null),
     [mobileNav, setMobileNav] = useState(false),
-    [showNotices, setShowNotices] = useState(false);
+    [showNotices, setShowNotices] = useState(false),
+    [showHistory, setShowHistory] = useState(false);
   const route = ROUTES.find((route) => route.id === routeId);
   const toCampus = isToCampus(route);
   const searchRef = useRef(null);
@@ -883,6 +884,10 @@ function Dashboard({ user, setUser, onLogout, toast }) {
   const pendingRequests = requests.filter(
     (q) => q.incoming && q.status === "PENDING",
   );
+  const historyRequests = requests
+    .filter((q) => q.status !== "PENDING")
+    .slice()
+    .reverse();
   const pending = pendingRequests.length;
   const unread = notices.filter((n) => !n.read).length;
   const visibleRides = searched ? rides : suggestions;
@@ -1013,6 +1018,7 @@ function Dashboard({ user, setUser, onLogout, toast }) {
   }
   const go = (p) => {
     setPage(p);
+    setShowHistory(false);
     setMobileNav(false);
     setError("");
   };
@@ -1198,14 +1204,39 @@ function Dashboard({ user, setUser, onLogout, toast }) {
                   </>
                 ) : page === "rides" ? (
                   "Your rides"
+                ) : showHistory ? (
+                  "Request history"
                 ) : (
                   "Requests"
                 )}
               </h1>
             </div>
-            <Button onClick={() => setModal("post")}>
-              <Plus size={18} /> Post a cab
-            </Button>
+            {page === "requests" ? (
+              <div className="page-heading-actions">
+                {showHistory ? (
+                  <Button
+                    className="outline"
+                    onClick={() => setShowHistory(false)}
+                  >
+                    <ArrowLeft size={16} /> Back
+                  </Button>
+                ) : (
+                  <Button
+                    className="outline"
+                    onClick={() => setShowHistory(true)}
+                  >
+                    View request history
+                  </Button>
+                )}
+                <Button onClick={() => setModal("post")}>
+                  <Plus size={18} /> Post a cab
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={() => setModal("post")}>
+                <Plus size={18} /> Post a cab
+              </Button>
+            )}
           </div>
           <ErrorText message={error} />
           {page === "find" && (
@@ -1378,7 +1409,58 @@ function Dashboard({ user, setUser, onLogout, toast }) {
           )}
           {page === "requests" && (
             <>
-              {loading ? (
+              {showHistory ? (
+                historyRequests.length ? (
+                  <div className="history-table-wrap">
+                    <table className="history-table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Number</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historyRequests.map((q) => {
+                          const name =
+                            q.student?.name ||
+                            (q.incoming
+                              ? "Unknown student"
+                              : q.ride?.creator?.name) ||
+                            "—";
+                          const phone =
+                            q.student?.phone ||
+                            (q.incoming ? "—" : q.ride?.creator?.phone) ||
+                            "—";
+                          const statusLabel =
+                            q.status === "ACCEPTED"
+                              ? "Accepted"
+                              : q.status === "REJECTED"
+                                ? "Rejected"
+                                : q.status === "CANCELLED"
+                                  ? "Cancelled"
+                                  : q.status;
+                          return (
+                            <tr key={q.id}>
+                              <td className="table-name">{name}</td>
+                              <td className="table-phone">{phone}</td>
+                              <td className="table-status">
+                                <span
+                                  className={`status-badge ${q.status.toLowerCase()}`}
+                                >
+                                  {statusLabel}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <Empty icon={Inbox} title="No request history yet" />
+                )
+              ) : loading ? (
                 <div className="loading">
                   <LoaderCircle className="spin" />
                   Loading requests…
